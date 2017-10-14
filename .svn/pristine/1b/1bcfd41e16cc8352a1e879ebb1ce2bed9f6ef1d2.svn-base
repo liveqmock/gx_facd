@@ -1,0 +1,238 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.wangzhixuan.mapper.SendInfoMapper">
+
+	<!-- 通用查询映射结果 -->
+	<resultMap id="BaseResultMap" type="com.wangzhixuan.model.SendInfo">
+		<id column="id" property="id" />
+		<result column="pid" property="pid" />
+		<result column="send_info_name" property="sendInfoName" />
+		<result column="send_info_type" property="sendInfoType" />
+		<result column="send_info" property="sendInfo" />
+		<result column="urgency_level" property="urgencyLevel" />
+		<result column="longitude" property="longitude" />
+		<result column="latitude" property="latitude" />
+		<result column="send_id" property="sendId" />
+		<result column="receive_time" property="receiveTime" />
+		<result column="verify_id" property="verifyId" />
+		<result column="verify_time" property="verifyTime" />
+		<result column="info_status" property="infoStatus" />
+		<result column="data_status" property="dataStatus" />
+		<result column="data_origin" property="dataOrigin" />
+		<result column="feedback" property="feedback" />
+		<result column="uuid" property="uuid" />
+	</resultMap>
+	
+
+    <!-- 通用查询结果列-->
+    <sql id="Base_Column_List">
+        id, send_info_name AS sendInfoName, send_info_type AS sendInfoType,
+        send_info AS sendInfo, send_id AS sendId,
+        receive_time AS receiveTime, verify_id AS verifyId, verify_time AS verifyTime, info_status  AS infoStatus,
+         data_status AS dataStatus, data_origin AS dataOrigin,feedback, urgency_level AS urgencyLevel
+    </sql>
+    
+    
+    <select id="selectSendInfoPage" resultType="Map">
+        SELECT 
+        t.id, t.send_info_name AS sendInfoName, t.send_info_type AS sendInfoType,
+        t.send_info AS sendInfo, t.send_id AS sendId,
+        u.name AS sendUserName,
+        t.receive_time AS receiveTime, t.verify_id AS verifyId, t.verify_time AS verifyTime, 
+        t.info_status  AS infoStatus, t.data_status AS dataStatus, 
+        t.data_origin AS dataOrigin,t.feedback, t.urgency_level AS urgencyLevel
+        FROM send_info t
+        LEFT JOIN user u ON t.send_id = u.id WHERE 
+	       	<choose>  
+	            <when test="stype!=2">  
+	                t.info_status != 2
+	            </when >  
+	            <otherwise>  
+	            	t.info_status = 2 
+	            </otherwise>  
+	        </choose>  
+            <if test=" sendUserName != null and sendUserName != '' ">
+               and u.name LIKE CONCAT('%', #{sendUserName}, '%')  
+            </if>
+            <if test=" sendInfoName != null and sendInfoName  != '' ">
+                AND t.send_info_name  LIKE CONCAT('%', #{sendInfoName}, '%')    
+            </if>
+            <if test=" recvDateStart != null ">
+                <![CDATA[ and t.receive_time >= #{recvDateStart} ]]>
+            </if>
+            <if test=" recvDateEnd != null ">
+                <![CDATA[ and t.receive_time <= #{recvDateEnd} ]]>
+            </if>
+            <if test=" content != null ">
+                AND t.send_info LIKE CONCAT('%', #{content}, '%')  
+            </if>
+            <if test=" sendInfoType != null and sendInfoType != -1 ">
+                AND t.send_info_type = #{sendInfoType}
+            </if>
+            <if test=" urgencyLevel != null and urgencyLevel != -1 ">
+                AND t.urgency_level = #{urgencyLevel}
+            </if>
+            <if test=" infoStatus != null and infoStatus != -1 ">
+                AND t.info_status = #{infoStatus}
+            </if>
+    </select>
+    
+    <select id="selectExcle" resultType="com.wangzhixuan.model.SendInfo">
+        SELECT 
+       u.name AS sendusername,
+        t.send_info_name AS sendInfoName,
+        t.receive_time AS receiveTime,  
+        t.send_info AS sendInfo, 
+        t.send_info_type AS sendInfoType,
+        t.urgency_level AS urgencyLevel,
+        t.info_status  AS infoStatus
+        
+        FROM send_info t
+        LEFT JOIN user u ON t.send_id = u.id WHERE 
+        <choose>  
+	            <when test="stype!=2">  
+	                t.info_status != 2
+	            </when >  
+	            <otherwise>  
+	            	t.info_status = 2 
+	            </otherwise>  
+	        </choose>  
+            <if test=" sendUserName != null and sendUserName != '' ">
+               and u.name LIKE CONCAT('%', #{sendUserName}, '%')  
+            </if>
+            <if test=" sendInfoName != null and sendInfoName  != '' ">
+                AND t.send_info_name  LIKE CONCAT('%', #{sendInfoName}, '%')    
+            </if>
+            <if test=" recvDateStart != null ">
+                <![CDATA[ and t.receive_time >= #{recvDateStart} ]]>
+            </if>
+            <if test=" recvDateEnd != null ">
+                <![CDATA[ and t.receive_time <= #{recvDateEnd} ]]>
+            </if>
+            <if test=" content != null ">
+                AND t.send_info LIKE CONCAT('%', #{content}, '%')  
+            </if>
+            <if test=" sendInfoType != null and sendInfoType != -1 ">
+                AND t.send_info_type = #{sendInfoType}
+            </if>
+            <if test=" urgencyLevel != null and urgencyLevel != -1 ">
+                AND t.urgency_level = #{urgencyLevel}
+            </if>
+            <if test=" infoStatus != null and infoStatus != -1 ">
+                AND t.info_status = #{infoStatus}
+            </if>
+    </select>
+  
+    <select id="selectReportList" resultType="Map">
+        SELECT * 
+        FROM send_info t
+        <where>
+            <if test=" startDate != null ">
+                <![CDATA[ t.receive_time >= #{startDate} ]]>
+            </if>
+            <if test=" endDate != null ">
+                <![CDATA[ and t.receive_time < #{endDate} ]]>
+            </if>
+        </where>
+    </select>
+    
+    <!-- 获取分页的信息 -->
+    <select id="selectReportList2" resultType="Map">
+        SELECT 
+        t.*,
+        u.name
+        FROM send_info t
+        LEFT JOIN user u ON t.send_id = u.id WHERE t.info_status = 2 
+      		<if test=" beginid != null and beginid != '' ">
+      			<![CDATA[ and t.id < #{beginid} ]]>
+      		</if>
+            <if test=" sendUserName != null and sendUserName != '' ">
+               and u.name LIKE CONCAT('%', #{sendUserName}, '%')  
+            </if>
+            <if test=" sendInfoName != null and sendInfoName  != '' ">
+                AND t.send_info_name  LIKE CONCAT('%', #{sendInfoName}, '%')    
+            </if>
+            <if test=" recvDateStart != null ">
+                <![CDATA[ and t.receive_time >= #{recvDateStart} ]]>
+            </if>
+            <if test=" recvDateEnd != null ">
+                <![CDATA[ and t.receive_time <= #{recvDateEnd} ]]>
+            </if>
+            <if test=" content != null ">
+                AND t.send_info LIKE CONCAT('%', #{content}, '%')  
+            </if>
+            <if test=" sendInfoType != null and sendInfoType != -1 ">
+                AND t.send_info_type = #{sendInfoType}
+            </if>
+            <if test=" urgencyLevel != null and urgencyLevel != -1 ">
+                AND t.urgency_level = #{urgencyLevel}
+            </if>
+            <if test=" infoStatus != null and infoStatus != -1 ">
+                AND t.info_status = #{infoStatus}
+            </if>
+            <choose>
+				<when test="sort!=null">
+						ORDER BY ${sort}
+					<if test="order!=null">
+						${order}
+					</if>
+				</when>
+				<otherwise>
+					ORDER BY receive_time desc
+				</otherwise>
+			</choose>  
+			          
+      	
+            <if test="rows!= null">
+	             <![CDATA[ LIMIT #{rows}]]>
+	        </if>
+        
+            
+    </select>
+    
+    <!-- 获取分页的总数 -->
+    <select id="selectReportList2Count" resultType="java.lang.Integer">
+        SELECT 
+        count(*) AS total
+        FROM send_info t
+        LEFT JOIN user u ON t.send_id = u.id WHERE  t.info_status = 2 
+            <if test=" sendUserName != null and sendUserName != '' ">
+                u.name LIKE CONCAT('%', #{sendUserName}, '%')  
+            </if>
+            <if test=" sendInfoName != null and sendInfoName  != '' ">
+                AND t.send_info_name  LIKE CONCAT('%', #{sendInfoName}, '%')    
+            </if>
+            <if test=" recvDateStart != null ">
+                <![CDATA[ and t.receive_time >= #{recvDateStart} ]]>
+            </if>
+            <if test=" recvDateEnd != null ">
+                <![CDATA[ and t.receive_time <= #{recvDateEnd} ]]>
+            </if>
+            <if test=" content != null ">
+                AND t.send_info LIKE CONCAT('%', #{content}, '%')  
+            </if>
+            <if test=" sendInfoType != null and sendInfoType != -1 ">
+                AND t.send_info_type = #{sendInfoType}
+            </if>
+            <if test=" urgencyLevel != null and urgencyLevel != -1 ">
+                AND t.urgency_level = #{urgencyLevel}
+            </if>
+            <if test=" infoStatus != null and infoStatus != -1 ">
+                AND t.info_status = #{infoStatus}
+            </if>
+			<choose>
+			    
+				<when test="sort!=null">
+					 	ORDER BY ${sort}
+					<if test="order!=null">
+						${order}
+					</if>
+				</when>
+				<otherwise>
+					ORDER BY receive_time desc
+				</otherwise>
+			</choose>  
+    </select>
+    
+
+</mapper>

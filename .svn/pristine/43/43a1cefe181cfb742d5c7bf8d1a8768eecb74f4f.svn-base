@@ -1,0 +1,1056 @@
+package com.wangzhixuan.controller.smarttv;
+
+import java.io.IOException;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
+import java.util.ArrayList;
+import java.util.Comparator;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.TreeMap;
+
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Controller;
+import org.springframework.ui.Model;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.ResponseBody;
+import org.springframework.web.util.HtmlUtils;
+
+import com.baomidou.mybatisplus.mapper.EntityWrapper;
+import com.wangzhixuan.commons.base.BaseController;
+import com.wangzhixuan.commons.utils.DigestUtils;
+import com.wangzhixuan.model.AppVersion;
+import com.wangzhixuan.model.DailyPatrol;
+import com.wangzhixuan.model.LiveVideo;
+import com.wangzhixuan.model.MapMark;
+import com.wangzhixuan.model.Notice;
+import com.wangzhixuan.model.NoticeRead;
+import com.wangzhixuan.model.PatrolTrail;
+import com.wangzhixuan.model.Road;
+import com.wangzhixuan.model.RoadTrail;
+import com.wangzhixuan.model.SendFile;
+import com.wangzhixuan.model.SendInfo;
+import com.wangzhixuan.model.User;
+import com.wangzhixuan.service.IAppVersionService;
+import com.wangzhixuan.service.IDailyPatrolService;
+import com.wangzhixuan.service.ILiveVideoService;
+import com.wangzhixuan.service.IMapMarkService;
+import com.wangzhixuan.service.INoticeReadService;
+import com.wangzhixuan.service.INoticeService;
+import com.wangzhixuan.service.IPatrolTrailService;
+import com.wangzhixuan.service.IRoadService;
+import com.wangzhixuan.service.IRoadTrailService;
+import com.wangzhixuan.service.ISendFileService;
+import com.wangzhixuan.service.ISendInfoService;
+import com.wangzhixuan.service.ISysConfigService;
+import com.wangzhixuan.service.IUserService;
+
+import net.sf.json.JSONArray;
+import net.sf.json.JSONObject;
+
+@Controller
+@RequestMapping("/smart")
+public class SmartCommonController extends BaseController {
+
+	@Autowired
+	private ISendInfoService sendService;
+
+	@Autowired
+	private ILiveVideoService iLiveVideoService;
+
+	@Autowired
+	private ISendFileService fileservice;
+
+	@Autowired
+	private IUserService usrService;
+
+	@Autowired
+	private IDailyPatrolService dpService;
+
+	@Autowired
+	private IRoadService rodService;
+
+	@Autowired
+	private IPatrolTrailService ptrailService;
+
+	@Autowired
+	private IRoadTrailService rtailService;
+
+	@Autowired
+	private INoticeReadService inotService;
+
+	@Autowired
+	private INoticeService inService;
+
+	@Autowired
+	private IMapMarkService mmService;
+
+	@Autowired
+	private IAppVersionService IAppService;
+
+	@Autowired
+	private ISysConfigService configService;
+	
+	@PostMapping("/login")
+	public Object login() {
+		logger.info("POST请求登录");
+		return null;
+	}
+
+	/**
+	 * 获取公告
+	 * 
+	 * @param req
+	 * @param token
+	 * @return
+	 */
+	@RequestMapping("/getnotice")
+	@ResponseBody
+	public Object getnotice(HttpServletRequest req, String token) {
+		User user = usrService.selectByTV(token);
+		if (user == null) {
+			return renderError("用户登录已过期!");
+		}
+		try {
+			EntityWrapper<NoticeRead> ew = new EntityWrapper<NoticeRead>();
+			ew.eq("uid", user.getId());
+			ew.eq("status", 0);
+			ew.eq("nstatus", 1);
+			ew.orderBy("create_time");
+			List<NoticeRead> note = inotService.selectList(ew);
+			JSONArray arr = new JSONArray();
+			for (NoticeRead noticeRead : note) {
+				Notice n = inService.selectById(noticeRead.getNid());
+				n.setInfo(HtmlUtils.htmlUnescape(n.getInfo()));
+				arr.add(n);
+			}
+			return renderSuccess(arr);
+		} catch (Exception e) {
+			e.printStackTrace();
+			this.ErrorLog(e, 2, user.getId());
+			return renderError("系统错误");
+		}
+	}
+
+
+	/**
+	 * 消息已读
+	 * 
+	 * @param token
+	 * @param id
+	 * @return
+	 */
+	@RequestMapping(value = "readnotice")
+	@ResponseBody
+	public Object readnotice(String token, Long id) {
+		User user = usrService.selectByTV(token);
+		if (user == null) {
+			return renderError("用户登录已过期!");
+		}
+		try {
+			EntityWrapper<NoticeRead> ew = new EntityWrapper<NoticeRead>();
+			ew.eq("nid", id);
+			ew.eq("uid", user.getId());
+			NoticeRead n = inotService.selectOne(ew);
+			if (n == null) {
+				return renderError("未知消息标识");
+			} else {
+				n.setStatus(1);
+				n.updateById();
+				this.OpLog("标记已读消息", 2, user.getId());
+				return renderSuccess();
+			}
+		} catch (Exception e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+			this.ErrorLog(e, 2, user.getId());
+			return renderError("系统错误");
+		}
+	}
+
+	/**
+	 * 实时巡防的大图展示
+	 * 
+	 * @param
+	 * @return
+	 */
+	@RequestMapping("/watchman")
+	@ResponseBody
+	public Object watchman(HttpServletRequest req, String token) {
+		User user = usrService.selectByTV(token);
+		if (user == null) {
+			return renderError("用户登录已过期!");
+		}
+		// 查询在巡防人信息 包括(用户信息，定位信息，巡防信息)
+		JSONArray arr = new JSONArray();
+		try {
+			EntityWrapper<DailyPatrol> ewu = new EntityWrapper<DailyPatrol>();
+			ewu.addFilter("end_time is null");
+			List<DailyPatrol> dps = dpService.selectList(ewu);
+			String url = req.getRequestURL().toString().split(req.getContextPath())[0];
+			for (DailyPatrol dp : dps) {
+				User uin = usrService.selectById(dp.getPatrolId());
+				Road rod = rodService.selectById(uin.getRoad());
+				PatrolTrail ptrail = ptrailService.selectnew(dp.getId());
+				JSONObject j = new JSONObject();
+				j.put("uid", uin.getId());
+				j.put("icon", url+uin.getIcon());
+				j.put("name", uin.getName());
+				j.put("roadname", rod.getName());
+				j.put("totaldistance", rod.getDistance());
+				j.put("reportcount", dp.getReportcount());
+				j.put("longitude", ptrail.getLongitude());
+				j.put("latitude", ptrail.getLatitude());
+				j.put("patrolid", dp.getId());
+				j.put("patroldistance", dp.getPatrolDistance());
+				EntityWrapper<RoadTrail> ewr = new EntityWrapper<RoadTrail>();
+				ewr.eq("rid", rod.getId());
+				ewr.orderBy("id", true);
+				List<RoadTrail> rlist = rtailService.selectList(ewr);
+				JSONArray ar = new JSONArray();
+				for (RoadTrail rt : rlist) {
+					JSONObject aj = new JSONObject();
+					aj.put("longitude", rt.getLongitude());
+					aj.put("latitude", rt.getLatitude());
+					ar.add(aj);
+				}
+				j.put("roadinfo", ar);
+				EntityWrapper<PatrolTrail> ewp = new EntityWrapper<PatrolTrail>();
+				ewp.eq("pid", dp.getId());
+				ewp.orderBy("create_time", true);
+				List<PatrolTrail> ptail = ptrailService.selectList(ewp);
+				JSONArray ar1 = new JSONArray();
+				for (PatrolTrail rt : ptail) {
+					JSONObject aj = new JSONObject();
+					aj.put("longitude", rt.getLongitude());
+					aj.put("latitude", rt.getLatitude());
+					ar1.add(aj);
+				}
+				j.put("patrolinfo", ar1);
+				arr.add(j);
+			}
+		} catch (Exception e) {
+			e.printStackTrace();
+			this.ErrorLog(e, 2, user.getId());
+			return renderError("系统异常");
+		}
+		this.OpLog("实时巡防的大图展示", 2, user.getId());
+		return renderSuccess(arr);
+	}
+
+	/**
+	 * 单人信息页面和本次报送信息列表
+	 * 
+	 * @param req
+	 * @return
+	 */
+	@RequestMapping("/personsendlist")
+	@ResponseBody
+	public Object personsendlist(HttpServletRequest req, String token, Long uid, Integer pid) {
+		JSONObject j = new JSONObject();
+		User user = usrService.selectByTV(token);
+		if (user == null) {
+			return renderError("用户登录已过期!");
+		}
+		// 查询巡防人员的基本信息
+		try {
+			String url = req.getRequestURL().toString().split(req.getContextPath())[0];
+			User info = usrService.selectById(uid);
+			j.put("icon", url+info.getIcon());// 头像
+			j.put("name", info.getName());// 名称
+			Road rod = rodService.selectById(info.getRoad());
+			j.put("roadname", rod.getName());// 路段名
+			j.put("totaldistance", rod.getDistance());// 路段总长
+			DailyPatrol dp = dpService.selectById(pid);
+			j.put("patroldistance", dp.getPatrolDistance());// 已巡防长度
+			EntityWrapper<RoadTrail> ewt = new EntityWrapper<>();
+			ewt.setSqlSelect("longitude,latitude");
+			ewt.eq("rid", rod.getId());
+			ewt.orderBy("create_time", true);
+			List<Map<String, Object>> rtls = rtailService.selectMaps(ewt);
+			j.put("road", rtls);
+			// 查询人员的巡防路线结果集
+			EntityWrapper<PatrolTrail> ew = new EntityWrapper<PatrolTrail>();
+			ew.setSqlSelect("longitude,latitude");
+			ew.eq("pid", pid);
+			ew.orderBy("create_time", true);
+			List<Map<String, Object>> ptrails = ptrailService.selectMaps(ew);
+			j.put("patrolroad", ptrails);// 已巡防路线
+			PatrolTrail ptrail = ptrailService.selectnew(dp.getId());
+			j.put("longitude", ptrail.getLongitude());
+			j.put("latitude", ptrail.getLatitude());
+			// 查询 单人本阶段的所有报送信息集
+			EntityWrapper<SendInfo> ews = new EntityWrapper<>();
+			ews.setSqlSelect("id,DATE_FORMAT(receive_time,'%H:%i:%s') as receiveTime,send_info_type,send_info_name");
+			ews.eq("pid", pid);
+			List<Map<String, Object>> infoList = sendService.selectMaps(ews);
+			j.put("infolist", infoList);
+			this.OpLog("单人信息页面和本次报送信息列表", 2, user.getId());
+			return renderSuccess(j);
+		} catch (Exception e) {
+			e.printStackTrace();
+			this.ErrorLog(e, 2, user.getId());
+			return renderError("系统异常");
+		}
+	}
+
+
+
+	/**
+	 * 获取地图的标记信息
+	 * 
+	 * @param req
+	 * @param token
+	 * @return
+	 */
+	@RequestMapping("/mapmark")
+	@ResponseBody
+	public Object mapmark(HttpServletRequest req, String token) {
+		User user = usrService.selectByTV(token);
+		if (user == null) {
+			return renderError("用户登录已过期!");
+		}
+		try {
+			String url = req.getRequestURL().toString().split(req.getContextPath())[0];
+
+			EntityWrapper<MapMark> ew = new EntityWrapper<>();
+			ew.eq("type", 0);
+			List<MapMark> mms = mmService.selectList(ew);
+
+			JSONArray jsonArray = new JSONArray();
+			for (MapMark mm : mms) {
+				JSONObject json = new JSONObject();
+				json.put("id", mm.getId());
+				json.put("name", mm.getName());
+				json.put("type", mm.getType());
+				json.put("longitude", mm.getLongitude());
+				json.put("latitude", mm.getLatitude());
+				json.put("info", mm.getInfo());
+				json.put("createTime", new SimpleDateFormat("yyyy-MM-dd HH:mm").format(mm.getCreateTime()) );
+				json.put("icon", url+mm.getIcon());
+				jsonArray.add(json);
+			}
+			this.OpLog("获取地图的标记信息", 2, user.getId());
+			return renderSuccess(jsonArray);
+		} catch (Exception e) {
+			e.printStackTrace();
+			this.ErrorLog(e, 2, user.getId());
+			return renderError("系统异常");
+		}
+	}
+
+	/**
+	 * 按时间显示的报送信息结果：智能电视所有的送报信息列表
+	 * 
+	 * @param request
+	 * @param response
+	 * @param model
+	 */
+	@RequestMapping(value = { "getReportList" })
+	public void getReportList(HttpServletRequest request, HttpServletResponse response, Model model) {
+
+		response.setContentType("text/html;charset=UTF-8");
+		response.addHeader("Access-Control-Allow-Origin", "*");// '*'表示允许所有域名访问，可以设置为指定域名访问，多个域名中间用','隔开
+
+		// 返回对象
+		JSONObject ret = new JSONObject();
+
+		// 获取对应的参数的信息
+		String startDate = request.getParameter("startDate");
+		String endDate = request.getParameter("endDate");
+
+		// 先做参数判断
+		if (null == startDate || startDate.equals("") || null == endDate || endDate.equals("")) {
+			// 参数错误
+			ret.put("success", false);
+			ret.put("msg", "startDate, endDate必填参数");
+			try {
+				response.setCharacterEncoding("UTF-8");
+				response.getWriter().write(ret.toString());
+			} catch (IOException e1) {
+
+				e1.printStackTrace();
+			}
+			return;
+		}
+
+		// 格式化日期格式
+		SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd");
+		// 对应的参数的数据
+		Map<String, Object> condition = new HashMap<String, Object>();
+
+		// 开始时间
+		Date startTime = null, endTime = null;
+		if (null != startDate && !startDate.equals("")) {
+			try {
+
+				startTime = (Date) sdf.parseObject(startDate);
+				condition.put("startDate", startTime);
+			} catch (ParseException e) {
+
+				e.printStackTrace();
+
+				// 参数错误
+				ret.put("success", false);
+				ret.put("msg", "参数: startDate, 格式错误，格式：yyyy-MM-dd");
+				try {
+					response.setCharacterEncoding("UTF-8");
+					response.getWriter().write(ret.toString());
+				} catch (IOException e1) {
+
+					e1.printStackTrace();
+				}
+				return;
+
+			}
+		}
+		// 结束时间
+		if (null != endDate && !endDate.equals("")) {
+			try {
+				endTime = (Date) sdf.parseObject(endDate);
+				// 由于获取的是0点，需要加1天时间
+				endTime.setTime(endTime.getTime() + 24 * 60 * 60 * 1000);
+				condition.put("endDate", endTime);
+			} catch (ParseException e) {
+
+				e.printStackTrace();
+				// 参数错误
+				ret.put("success", false);
+				ret.put("msg", "参数: endDate, 格式错误，格式：yyyy-MM-dd");
+				try {
+					response.setCharacterEncoding("UTF-8");
+					response.getWriter().write(ret.toString());
+				} catch (IOException e1) {
+
+					e1.printStackTrace();
+				}
+				return;
+
+			}
+		}
+
+		// 获取时间间隔
+		long from = startTime.getTime();
+		long to = endTime.getTime();
+		int day = (int) ((to - from) / (24 * 60 * 60 * 1000));// 一天等于多少毫秒：24*3600*1000
+		Map<String, JSONArray> eventMap = new TreeMap<String, JSONArray>(new Comparator<String>() {
+
+			@Override
+			public int compare(String o1, String o2) {
+
+				return o2.compareTo(o1);
+			}
+		});
+		if (day <= 0) {
+			// 错误
+			// 参数错误
+			ret.put("success", false);
+			ret.put("msg", "startDate > endTime 格式：yyyy-MM-dd");
+			try {
+				response.setCharacterEncoding("UTF-8");
+				response.getWriter().write(ret.toString());
+			} catch (IOException e1) {
+
+				e1.printStackTrace();
+			}
+			return;
+		} else {
+			// 返回多个
+			Date begin = endTime;
+			for (int i = 1; i <= day; i++) {
+				String date = sdf.format(begin.getTime() - i * 24 * 60 * 60 * 1000);
+				eventMap.put(date, new JSONArray());
+			}
+		}
+
+		// 填写正确的数据
+		ret.put("success", true);
+		ret.put("msg", "获取数据成功");
+		List<Map<String, Object>> list = sendService.getReportList(condition);
+
+		// 遍历进行数据的填写
+		for (Map<String, Object> map : list) {
+			// 获取接收时间
+			String recvTime = sdf.format(((Date) map.get("receive_time")));
+			// 判断对应的记录对应那个日期，添加的数组中
+			for (Map.Entry<String, JSONArray> eventEntry : eventMap.entrySet()) {
+				if (recvTime.indexOf(eventEntry.getKey()) >= 0) {
+					JSONArray events = eventEntry.getValue();
+					// 构建对应的事件
+					JSONObject event = new JSONObject();
+					// 添加ID
+					event.put("id", map.get("id"));
+					// 0-基础设施；1-涉外时间；2-走私事件；3-突发事件
+					if ((int) map.get("send_info_type") == 0)
+						event.put("type", "基础设施");
+					else if ((int) map.get("send_info_type") == 1)
+						event.put("type", "涉外事件");
+					else if ((int) map.get("send_info_type") == 2)
+						event.put("type", "走私事件");
+					else if ((int) map.get("send_info_type") == 3)
+						event.put("type", "突发事件");
+					else
+						event.put("type", "未定义类型");
+					// 添加标题
+					event.put("shortContent", map.get("send_info_name") == null ? "" : map.get("send_info_name"));
+
+					// 事件添加到数组中
+					events.add(event);
+
+				}
+			}
+
+		}
+		// 添加到JSON的数组中
+		JSONArray arr = new JSONArray();
+		for (Map.Entry<String, JSONArray> eventEntry : eventMap.entrySet()) {
+			JSONObject dayEvent = new JSONObject();
+			dayEvent.put("eventTime", eventEntry.getKey());
+			dayEvent.put("events", eventEntry.getValue());
+			arr.add(dayEvent);
+		}
+
+		// 返回集合
+		ret.put("obj", arr);
+
+		try {
+			response.setCharacterEncoding("UTF-8");
+			response.getWriter().write(ret.toString());
+		} catch (IOException e1) {
+
+			e1.printStackTrace();
+		}
+
+		return;
+
+	}
+
+	/**
+	 * 报送的单个详细信息获取（信息报送界面-实时信息详细界面获取）
+	 * 
+	 * @param request
+	 * @param response
+	 * @param model
+	 */
+	@RequestMapping(value = { "getReportDetail" })
+	public void getReportDetail(HttpServletRequest request, HttpServletResponse response, Model model) {
+
+		response.setContentType("text/html;charset=UTF-8");
+		response.addHeader("Access-Control-Allow-Origin", "*");// '*'表示允许所有域名访问，可以设置为指定域名访问，多个域名中间用','隔开
+
+		// 返回对象
+		JSONObject ret = new JSONObject();
+
+		// 获取对应的参数的信息
+		String id = request.getParameter("id");
+
+		// 先做参数判断
+		if (null == id || id.equals("")) {
+			// 参数错误
+			ret.put("success", false);
+			ret.put("msg", "startDate, endDate必填参数");
+			try {
+				response.setCharacterEncoding("UTF-8");
+				response.getWriter().write(ret.toString());
+			} catch (IOException e1) {
+				e1.printStackTrace();
+			}
+			return;
+		}
+
+		SendInfo sendInfo = sendService.selectById(id);
+		if (null == sendInfo) {
+			ret.put("success", false);
+			ret.put("msg", "对应ID的对象不存在");
+			try {
+				response.setCharacterEncoding("UTF-8");
+				response.getWriter().write(ret.toString());
+			} catch (IOException e1) {
+				e1.printStackTrace();
+			}
+			return;
+		}
+
+		ret.put("success", true);
+		ret.put("msg", "命令执行成功");
+
+		// List<SendFile> fileList = null;
+		List<SendFile> fileList = new ArrayList<>();
+		EntityWrapper<SendFile> ew = new EntityWrapper<SendFile>();
+		ew.eq("owenid", sendInfo.getId());
+		ew.eq("filesource", 2);
+		fileList = fileservice.selectfileList(ew);
+		// 返回JSONObject
+		JSONObject obj = new JSONObject();
+		obj.put("id", sendInfo.getId());
+		obj.put("title", sendInfo.getSendInfoName());
+		SimpleDateFormat formatter = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+		String dateString = formatter.format(sendInfo.getReceiveTime());
+		obj.put("eventTime", dateString);
+		obj.put("contentText", sendInfo.getSendInfo());
+
+		// 添加File数据
+		JSONArray arrFile = new JSONArray();
+		String url = request.getRequestURL().toString().split(request.getContextPath())[0];
+		for (int i = 0; i < fileList.size(); i++) {
+			SendFile sendFile = fileList.get(i);
+			JSONObject objFile = new JSONObject();
+			objFile.put("fileType", sendFile.getFiletype());
+			String fileUrl = sendFile.getFileurl();
+			objFile.put("fileUrl", url+fileUrl);
+			arrFile.add(objFile);
+		}
+		obj.put("files", arrFile);
+
+		ret.put("obj", obj);
+
+		try {
+			response.setCharacterEncoding("UTF-8");
+			response.getWriter().write(ret.toString());
+		} catch (IOException e1) {
+
+			e1.printStackTrace();
+		}
+
+		return;
+
+	}
+
+	/**
+	 * 获取列表接口增加分页的功能
+	 * 
+	 * @param request
+	 * @param response
+	 * @param model
+	 */
+	@RequestMapping(value = { "getReportList2" })
+	public void getReportList2(HttpServletRequest request, HttpServletResponse response, Model model) {
+
+		response.setContentType("text/html;charset=UTF-8");
+		response.addHeader("Access-Control-Allow-Origin", "*");// '*'表示允许所有域名访问，可以设置为指定域名访问，多个域名中间用','隔开
+		/*
+		 * sendUserName:1 //报送人 sendInfoName:2 //报送标题 recvDateStart:2017-06-13
+		 * 11:55:09 //报送开始时间 recvDateEnd:2017-06-17 11:55:13 //报送结束时间
+		 * sendInfo:12 //报送的内容 sendInfoType:0
+		 * //报送信息类型：0-基础设施；1-涉外时间；2-走私事件；3-突发事件 urgencyLevel:1 //紧急程度
+		 * 0-一般；1-紧急；2-特急 infoStatus:1 //报送信息状态 0-未查看；1-已查看；2-已审核；3-未审核 page:1
+		 * //页码 rows:20 //每页条数 sort:id //排序字段 order:asc //排序条件
+		 */
+
+		// 获取参数信息
+		String senderName = request.getParameter("senderName");
+		String title = request.getParameter("title");
+		String startDate = request.getParameter("startDate");
+		String endDate = request.getParameter("endDate");
+		String content = request.getParameter("content");
+		String sendType = request.getParameter("sendType");
+		String urgencyLevel = request.getParameter("urgencyLevel");
+		String checkStatus = request.getParameter("checkStatus");
+
+		String page = request.getParameter("page") == null ? "1" : request.getParameter("page");
+		String rows = request.getParameter("rows");
+		String sort = request.getParameter("sort") == null ? "receive_time" : request.getParameter("sort");
+		String order = request.getParameter("order") == null ? "desc" : request.getParameter("order");
+		String beginid = request.getParameter("beginid") == null ? null : request.getParameter("beginid");
+
+		JSONObject ret = new JSONObject();
+
+		// 参数校验
+		try {
+			Integer.parseInt(page);
+		} catch (NumberFormatException e) {
+			ret.put("success", false);
+			ret.put("msg", "参数page要求为数字");
+			try {
+				response.setCharacterEncoding("UTF-8");
+				response.getWriter().write(ret.toString());
+			} catch (IOException e1) {
+
+				e1.printStackTrace();
+			}
+			return;
+		}
+
+		try {
+			Integer.parseInt(rows);
+		} catch (NumberFormatException e) {
+			ret.put("success", false);
+			ret.put("msg", "参数row要求为数字");
+			try {
+				response.setCharacterEncoding("UTF-8");
+				response.getWriter().write(ret.toString());
+			} catch (IOException e1) {
+
+				e1.printStackTrace();
+			}
+			return;
+		}
+
+		// int startPos = (Integer.parseInt(page) - 1) * Integer.parseInt(rows);
+		SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+		// 添加到对应条件信息
+		Map<String, Object> condition = new HashMap<String, Object>();
+		if (null != senderName && !senderName.equals(""))
+			condition.put("sendUserName", senderName);
+		if (null != title && !title.equals(""))
+			condition.put("sendInfoName", title);
+		// 开始时间
+		if (null != startDate && !startDate.equals("")) {
+			try {
+				condition.put("recvDateStart", sdf.parseObject(startDate));
+			} catch (ParseException e) {
+				e.printStackTrace();
+			}
+		}
+		// 结束时间
+		if (null != endDate && !endDate.equals("")) {
+			try {
+				condition.put("recvDateEnd", sdf.parseObject(endDate));
+			} catch (ParseException e) {
+				e.printStackTrace();
+			}
+		}
+		// 报送内容
+		if (null != content && !content.equals("")) {
+			condition.put("content", content);
+		}
+		// 报送的类型
+		if (null != sendType && !sendType.equals("")) {
+			condition.put("sendInfoType", Integer.parseInt(sendType));
+		}
+		// 紧急程度
+		if (null != urgencyLevel && !urgencyLevel.equals("")) {
+			condition.put("urgencyLevel", Integer.parseInt(urgencyLevel));
+		}
+		// 公文状态
+		if (null != checkStatus && !checkStatus.equals("")) {
+			condition.put("infoStatus", Integer.parseInt(checkStatus));
+		}
+		// 排序字段
+		if (null != sort && !sort.equals("") && null != order && !order.equals("")) {
+			condition.put("sort", sort);
+			condition.put("order", order);
+		}
+
+		// 页码
+		// condition.put("startPos", startPos);
+		// 条数
+		condition.put("rows", Integer.parseInt(rows));
+		// 开始id
+		if (beginid != null && !beginid.equals("")) {
+			condition.put("beginid", beginid);
+		}
+		int Count = sendService.getReportList2Count(condition);
+		List<Map<String, Object>> list = sendService.getReportList2(condition);
+		if (list.size() == 0 && Count > 0) {
+			ret.put("success", false);
+			ret.put("msg", "已显示全部数据");
+			try {
+				response.setCharacterEncoding("UTF-8");
+				response.getWriter().write(ret.toString());
+			} catch (IOException e1) {
+
+				e1.printStackTrace();
+			}
+			return;
+		}
+		Map<String, JSONObject> eventMap = new TreeMap<String, JSONObject>(new Comparator<String>() {
+
+			@Override
+			public int compare(String o1, String o2) {
+
+				return o2.compareTo(o1);
+			}
+		});
+		// 遍历获取对应的时间
+		for (Map<String, Object> map : list) {
+			String recvTime = sdf.format(((Date) map.get("receive_time")));
+			if (recvTime.length() < 10)
+				continue;
+			String date = recvTime.substring(0, 10);
+			eventMap.put(date, new JSONObject());
+		}
+
+		// 再次遍历添加数据
+		for (Map.Entry<String, JSONObject> eventEntry : eventMap.entrySet()) {
+			String eventTime = eventEntry.getKey();
+			JSONObject eventInfo = eventEntry.getValue();
+
+			JSONArray events = new JSONArray();
+			for (Map<String, Object> map : list) {
+				// 判断日期似乎否正确
+				String recvTime = sdf.format(((Date) map.get("receive_time")));
+				if (recvTime.indexOf(eventTime) >= 0) {
+					// 构建对应的事件
+					JSONObject event = new JSONObject();
+					// 添加ID
+					event.put("id", map.get("id"));
+					// 0-基础设施；1-涉外时间；2-走私事件；3-突发事件
+					if ((int) map.get("send_info_type") == 0)
+						event.put("type", "基础设施");
+					else if ((int) map.get("send_info_type") == 1)
+						event.put("type", "涉外事件");
+					else if ((int) map.get("send_info_type") == 2)
+						event.put("type", "走私事件");
+					else if ((int) map.get("send_info_type") == 3)
+						event.put("type", "突发事件");
+					else
+						event.put("type", "未定义类型");
+					// 添加标题
+					event.put("shortContent", map.get("send_info_name") == null ? "" : map.get("send_info_name"));
+					// 添加时间
+					String date = map.get("receive_time").toString();
+					event.put("createTime", (date == null || date.equals("")) ? "" : date.substring(0, 19));
+					// 事件添加到数组中
+					events.add(event);
+
+				} else
+					continue;
+			}
+			if (events.size() >= 0) {
+				eventInfo.put("eventTime", eventTime);
+				eventInfo.put("events", events);
+			}
+
+		}
+
+		// 返回最终信息
+
+		ret.put("success", true);
+		ret.put("msg", "获取数据成功");
+
+		JSONObject obj = new JSONObject();
+		JSONObject pageInfo = new JSONObject();
+		pageInfo.put("pageNo", page); // 页码
+		pageInfo.put("pageCount", Count / Integer.parseInt(rows) + 1); // 总页数
+		obj.put("pageInfo", pageInfo);
+
+		// 返回时间的对象
+		JSONArray data = new JSONArray();
+		for (Map.Entry<String, JSONObject> eventEntry : eventMap.entrySet()) {
+			data.add(eventEntry.getValue());
+		}
+
+		obj.put("data", data);
+		ret.put("obj", obj);
+
+		try {
+			response.setCharacterEncoding("UTF-8");
+			response.getWriter().write(ret.toString());
+		} catch (IOException e1) {
+			e1.printStackTrace();
+		}
+		
+	}
+
+	/**
+	 * 版本检查
+	 * 
+	 * @return
+	 */
+	@RequestMapping("checkVersion")
+	@ResponseBody
+	public Object checkversion(String token,HttpServletRequest req) {
+		User user = usrService.selectByTV(token);
+		if (user == null) {
+			return renderError("用户登录过期！");
+		}
+		try {
+			String url = req.getRequestURL().toString().split(req.getContextPath())[0];
+			JSONObject j = new JSONObject();
+			EntityWrapper<AppVersion> ew = new EntityWrapper<>();
+			ew.eq("status", 1);
+			ew.eq("type", 2);
+			ew.orderBy("create_time", false);
+			AppVersion avn = IAppService.selectOne(ew);
+			if (avn != null) {
+				j.put("appstatus", true);
+				j.put("appurl", url+ avn.getUrl());
+				j.put("appversion", avn.getVersion());
+			}else{j.put("appstatus", false);}
+			EntityWrapper<AppVersion> ewpl = new EntityWrapper<>();
+			ewpl.eq("status", 1);
+			ewpl.eq("type", 4);
+			AppVersion pl = IAppService.selectOne(ewpl);
+			if (pl != null) {
+				j.put("pluginstatus", true);
+				j.put("pluginurl", url+ pl.getUrl());
+				j.put("pluginversion", pl.getVersion());
+			}else{j.put("pluginstatus", false);}
+			this.OpLog("获取更新成功", 2, user.getId());
+			return renderSuccess(j);
+		} catch (Exception e) {
+			e.printStackTrace();
+			this.ErrorLog(e, 2, user.getId());
+			return renderError("系统错误！");
+		}
+	}
+
+	/**
+	 * 视频回传中获取当前在线的人员信息
+	 * 
+	 * @param
+	 */
+	@RequestMapping("/peopleonline")
+	@ResponseBody
+	public Object peopleonline(HttpServletRequest req, String token) {
+		User user = usrService.selectByTV(token);
+		if (user == null) {
+			return renderError("用户登录过期！");
+		}
+		try {
+			EntityWrapper<DailyPatrol> ew = new EntityWrapper<>();
+			ew.addFilter("end_time is null");
+			List<DailyPatrol> dps = dpService.selectList(ew);
+			JSONArray arr = new JSONArray();
+			String url = req.getRequestURL().toString().split(req.getContextPath())[0];
+			for (DailyPatrol dp : dps) {
+				JSONObject j = new JSONObject();
+				User u = usrService.selectById(dp.getPatrolId());
+				j.put("uid", u.getId());
+				j.put("name", u.getName());
+				j.put("icon", url+u.getIcon());
+				j.put("patrolid", dp.getId());
+				Road rod = rodService.selectById(u.getRoad());
+				j.put("roadname", rod == null ? "未分配" : rod.getName());
+
+				EntityWrapper<LiveVideo> ew1 = new EntityWrapper<LiveVideo>();
+				ew1.eq("patrolid", dp.getId());
+				ew1.eq("live_id", u.getId());
+				ew1.where(" end_time is null ");
+				LiveVideo lv = iLiveVideoService.selectOne(ew1);
+				if (lv != null) {
+					j.put("liveVideoId", lv.getId());
+					j.put("liveVideoUrl", lv.getUrl());
+					j.put("liveVideoTime", lv.getStartTime());
+					j.put("liveStatus", lv.getStatus());
+				} else {
+					j.put("liveStatus", 4);
+				}
+				arr.add(j);
+			}
+			this.OpLog("视频回传中获取当前在线的人员信息", 2, user.getId());
+			return renderSuccess(arr);
+		} catch (Exception e) {
+			e.printStackTrace();
+			this.ErrorLog(e, 2, user.getId());
+			return renderError("系统异常");
+		}
+	}
+
+	/**
+	 * 发起Tv在线直播
+	 * 
+	 * @param token
+	 * @param request
+	 * @return
+	 */
+	@RequestMapping("/onlineLive")
+	@ResponseBody
+	public Object onlineLive(String token, HttpServletRequest request) {
+		User user = usrService.selectByTV(token);
+		if (user == null) {
+			return renderError("用户登录过期！");
+		}
+		try {
+			String tcp = configService.selectConfig("video_tcp");
+			String ip  = configService.selectConfig("video_ip");
+			String port= configService.selectConfig("video_port");
+			String app = configService.selectConfig("video_app");
+			JSONObject j = new JSONObject();
+			DailyPatrol dp = dpService.selectById(request.getParameter("patrolid"));
+			if (dp.getEndStatus()>0) {
+				return renderSuccess("此巡防已结束！");
+			}
+			EntityWrapper<LiveVideo> ew = new EntityWrapper<>();
+			ew.eq("live_id", request.getParameter("receiveId"));
+			ew.le("status", 1);
+			LiveVideo video = iLiveVideoService.selectOne(ew);
+			if (video!=null) {
+				if (video.getStatus() == 0) {
+					return renderSuccess("已发起，等待客户端响应！");
+				}
+				j.put("liveid", video.getId());
+				j.put("liveurl", video.getUrl());
+				return renderSuccess(j);
+			}
+			String url = tcp+"://"+ip + ":" + port+"/"+ app+"/"+ DigestUtils.getRandomString(8);
+			LiveVideo lv = new LiveVideo();
+			lv.setReceiveId(user.getId());
+			lv.setCreateTime(new Date());
+			lv.setType(2);
+			lv.setPatrolid(Long.valueOf(request.getParameter("patrolid")));
+			lv.setLiveId(Long.valueOf(request.getParameter("receiveId")));
+			lv.setUrl(url);
+			lv.setStatus(0);
+			iLiveVideoService.insert(lv);
+			this.OpLog("发起TV端直播", 2, user.getId());
+			return renderSuccess("等待客户端响应！");
+		} catch (NumberFormatException e) {
+			e.printStackTrace();
+			this.ErrorLog(e, 2, user.getId());
+			return renderError("系统错误");
+		}
+	}
+	/**
+	 * 查询个人是否在直播中
+	 * @param token
+	 * @param request
+	 * @return
+	 */
+	@RequestMapping("/onlineLiveToOne")
+	@ResponseBody
+	public Object onlineLiveToOne(String token, HttpServletRequest request) {
+		User user = usrService.selectByTV(token);
+		if (user == null) {
+			return renderError("用户登录过期！");
+		}
+		String patrolid = request.getParameter("patrolid");
+		String receiveId = request.getParameter("receiveId");
+		EntityWrapper<LiveVideo> ew = new EntityWrapper<LiveVideo>();
+		ew.eq("patrolid", Integer.parseInt(patrolid));
+		ew.eq("live_id", Integer.parseInt(receiveId));
+		ew.eq("status", 1);
+		LiveVideo video = iLiveVideoService.selectOne(ew);
+		if (video!=null) {
+				return renderSuccess(true);
+		}else{
+			return renderSuccess(false);
+		}
+	}
+	/**
+	 * TV端查询系统配置信息
+	 * @param token
+	 * @param req
+	 * @return
+	 */
+	@RequestMapping("/QueryConfig")
+	@ResponseBody
+	public Object QueryConfig(String token,HttpServletRequest req) {
+		User user = usrService.selectByTV(token);
+		if (user == null) {
+			return renderError("用户登录过期！");
+		}
+		String selKey = req.getParameter("selKey");
+		JSONObject js=new JSONObject();
+		try {
+			String  s = configService.selectConfig(selKey);
+			if (s ==null) {
+				return renderError("无内容");
+			}
+			js = new JSONObject();
+			js.put("value", s);
+			this.OpLog("TV端查询配置信息成功", 1, user.getId());
+			return renderSuccess(js);
+		} catch (Exception e) {
+			e.printStackTrace();
+			return renderError("系统异常");
+		}
+	}
+}

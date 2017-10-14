@@ -1,0 +1,303 @@
+<%@ page language="java" contentType="text/html; charset=UTF-8" pageEncoding="UTF-8"%>
+<%@ include file="/commons/global.jsp" %>
+<script type="text/javascript">
+   var i = 3;
+   var ids ="0,";
+   var j = 0;
+    $(function() {
+        $('#examinationAddForm').form({
+            url : '${path}/examination/add',
+            onSubmit : function() {
+                progressLoad();
+                var isValid = $(this).form('validate');
+                if (!isValid) {
+                    progressClose();
+                }
+                return isValid;
+            },
+            success : function(result) {
+                progressClose();
+                result = $.parseJSON(result);
+                if (result.success) {
+                    //之所以能在这里调用到parent.$.modalDialog.openner_dataGrid这个对象，是因为user.jsp页面预定义好了
+                     parent.$.modalDialog.openner_dataGrid('reload');
+                    parent.$.modalDialog.openner_dataGrid.datagrid('reload');
+                    parent.$.modalDialog.handler.dialog('close');
+                } else {
+                    var form = $('#examinationAddForm');
+                    parent.$.messager.alert('错误', result.msg, 'error');
+                }
+            }
+        });
+    });
+    
+    function nextOne(){
+    	var select = $('.textbox-value').val();
+    	var title = $('#title').val();
+    	var btime = $('#beginTime').val();
+    	var etime = $('#endTime').val();
+    	
+         if(title==null||title==''&&btime==null||btime==''&&etime==null||etime==''){
+    			 alert("请输入完整的内容！");
+    			 return;
+    		 }
+    	 if(select==0){
+    		 alert("你还没有选择！")
+    		 return;
+    	 }
+    	 if(select==1){
+    		 $("#tab").hide();
+             $("#tab3").css('display','block');
+    		 return;
+    	 }
+    	 if(select==2){
+    		 $("#tab").hide();
+    		 $("#tab5").css('display','block');
+    		 nextfive(j);
+		       
+    	 }
+    	
+        
+    }
+    
+   
+    function nextThree(){
+    	 var a = $('.textbox-value').val();
+    	 var b = $('#num').val();
+    	 var $tr= $("#tab4 tr:last");
+    	 if(a==0){
+    		 alert("你还没有选择！")
+    		 return;
+    	 }
+    
+    	 if(b==null||b==''){
+    		 alert("请输入随机的题目数量");
+    		 return;
+    	 }
+    	 if(a==1){
+    		 $.ajax({
+					url:"${path}/examination/selectRandom?num="+b,
+					type:"post",
+					dataType:"json",
+					success:function(result){
+						 $("#tab3").hide();
+					        $("#tab4").css('display','block');
+					           var arr = result.obj;
+					        for(var i=0;i<arr.length;i++){
+					        	var v = arr[i];
+								 $tr.after("<tr><td>"+v.title+"</td><td>"+v.level+"<input type='hidden' name='ids' value='"+v.id+"'/></td></tr>");
+								 var g = v.answer;
+								 $tr.after("<tr></tr>");
+								 var $th= $("#tab4 tr:last");
+								 for(var j=0;j<g.length;j++){
+									   var h = g[j];
+									 $th.after("<td>"+h.answerContent+"<input type='hidden' name='id' value='"+h.id+"'/></td>");
+								 } 
+					        }
+					}
+				});
+    	 }
+    	
+    	 
+       
+    }
+    
+    function nextfinish(){
+    	
+		var array = document.getElementsByName("ids");
+		if(array==null||array==""){
+			alert("您还没有选择题目！");
+			return;
+		}else if(array.length<10){
+			alert("请至少选择10道以上的题目！");
+		}
+		for(var i=0;i<array.length;i+=1){
+				ids+= array[i].value+",";
+		}
+		ids = ids.substring(0, ids.length-1);
+		var data=$('#title').val();
+		var da = encodeURI(encodeURI(data));
+		 $.ajax({
+				url:"${path}/examination/add?ids="+ids+"&titl="+da+"&"+$('#examinationAddForm').serialize(),
+				type:"post",
+				success:function(result){
+					   progressClose();
+		                result = $.parseJSON(result);
+		                if (result.success) {
+		                	  parent.$.modalDialog.openner_dataGrid = examinationDataGrid;//因为添加成功之后，需要刷新这个treeGrid，所以先预定义好
+		                      var f = parent.$.modalDialog.handler.find('#examinationAddForm');
+		                    //之所以能在这里调用到parent.$.modalDialog.openner_dataGrid这个对象，是因为user.jsp页面预定义好了
+		                    parent.$.modalDialog.openner_dataGrid.datagrid('reload');
+		                    parent.$.modalDialog.handler.dialog('close');
+		                    parent.$.messager.alert('成功', result.msg, 'check');
+		                } else {
+		                    var form = $('#examinationAddForm');
+		                    parent.$.messager.alert('错误', result.msg, 'error');
+		                }
+				}
+			});
+		 }
+   
+    function nextagain(){
+    	$("#tab4").html("<table id='tab2'><tr></tr><table/><br/> <br/><center> <input type='button' onclick='nextfinish()' value='完成'></center><center> <input type='button' onclick='nextagain()' value='重新生成'></center>");
+    	 var $tr= $("#tab4 tr:last");
+    	 var b = $('#num').val();
+    	 $.ajax({
+				url:"${path}/examination/selectRandom?num="+b,
+				type:"post",
+				dataType:"json",
+				success:function(result){
+					 $("#tab3").hide();
+				        $("#tab4").css('display','block');
+				           var arr = result.obj;
+				        for(var i=0;i<arr.length;i++){
+				        	var v = arr[i];
+							 $tr.after("<tr><td>"+v.title+"</td><td>"+v.level+"</td></tr>");
+							 var g = v.answer;
+							 $tr.after("<tr></tr>");
+							 var $th= $("#tab4 tr:last");
+							 for(var j=0;j<g.length;j++){
+								   var h = g[j];
+								 $th.after("<td>"+h.answerContent+"<input type='hidden' name='id' value='"+h.id+"'/></td>");
+							 } 
+				        }
+				}
+			});
+    }
+    function nextfive(page){
+   	 if(page=1){
+   		 j=j-1;
+   	 }else if(page==2){
+   		 j=j+1;
+   	 }else if(page==3){
+   		 j=1;
+   	 }else if(page=0){
+   		 j=1;
+   	 } else{
+   		 j=max;
+   	 }
+   	 
+   	$("#tab6").html("<tr id='firstid'><tr/>"); 
+   
+	var arr = document.getElementsByName("ids");
+	
+	
+	for(var i=0;i<arr.length;i+=1){
+		if(arr[i].checked){
+			ids+= arr[i].value+",";
+		}
+	}
+	ids = ids.substring(0, ids.length-1);
+		 $.ajax({
+				url:"${path}/examination/selectPage?page="+j+"&ids="+ids,
+				type:"post",
+				dataType:"json",
+				success:function(result){
+				           var arr = result.obj;
+				           console.log(arr);
+				        for(var i=0;i<arr.length;i++){
+				        	 var $t= $("#tab5 tr:last");
+				        	$t.after("<tr id='firstid"+i+"'></tr>");
+				        	 var $tt= $("#firstid"+i);
+				        	var v = arr[i];
+							 $tt.append("<td><input  type='checkbox' name='ids' value='"+v.id+"'/></td><td>"+v.title+"</td><td>"+v.level+"</td>");
+							 var g = v.answer;
+							 var $tq= $("#tab5 tr:last");
+							 $tq.after("<tr id='trid"+i+"'></tr>");
+							var $tp= $("#trid"+i+"");
+							console.log(v.answer);
+							 // var $tp= $("#tab5 tr:last");
+							 for(var j=0;j<g.length;j++){
+								   var h = g[j];
+								 $tp.append("<td>"+h.answerContent+"<input type='hidden' name='id' value='"+h.id+"'/></td>");
+								// $tp.after("<tr></tr>");
+							 } 
+				        }
+				}
+			});
+	 
+    }
+  
+</script>
+<div class="easyui-layout" data-options="fit:true,border:false" >
+    <div data-options="region:'center',border:false" style="overflow-y:scroll; overflow-x:scroll;padding: 3px;" >
+        <form id="examinationAddForm" method="post" enctype="multipart/form-data" accept-charset="utf-8">
+           <div id="tab" >
+            <table class="grid" >
+            
+                <tr >
+                   <td >  标题：</td>
+                    <td ><input id="title" name="title" type="text" placeholder="请输入标题" class="easyui-validatebox span2" data-options="required:true" value=""></td>
+                 <td>类型</td>
+                  
+                    <td><select id="type" name="type" class="easyui-combobox"
+                                data-options="width:140,height:29,editable:false,panelHeight:'auto'">
+	                     <option value="0">请选择</option>
+	                     <option value="1">随机选题</option>
+                         <option value="2">手动选题</option>
+                       </select>
+                    </td>
+                </tr> 
+                 <tr>
+                  <td>考试开始日期</td>
+					<td>
+                        <input id="beginTime" onclick="WdatePicker({readOnly:true,dateFmt:'yyyy-MM-dd HH:mm:ss'})"  name="beginTime" placeholder="点击选择时间" type="text" class="easyui-validatebox span2" data-options="required:true" id="datetime" />
+                        </td>
+               
+                    <td>考试截止日期</td>
+					<td>
+                        <input id="endTime" onclick="WdatePicker({readOnly:true,dateFmt:'yyyy-MM-dd HH:mm:ss'})" name="endTime" placeholder="点击选择时间" type="text" class="easyui-validatebox span2" data-options="required:true" id="datetime" />
+                        </td>
+                 </tr>
+            </table  >
+            <br/>
+            <br/>
+            
+                           <center> <input type="button" onclick="nextOne()" value="下一步"></center>
+                        </div>  
+          
+            <div id="tab3"  style="display: none;" align="center">
+             <table>
+                 <tr>
+                    <td>
+                                                                              请输入随机选题的数量
+                    </td>
+                    <td>
+                        <input type="text" id="num" name="num"/>
+                    </td>
+                 </tr>
+             </table>
+             <br/>
+                <br/>
+                <center> <input type="button" onclick="nextThree()" value="下一步"></center>
+            </div >
+             <div id="tab4"  style="display: none;" align="center">
+                 <table id="tab2" width="100%" border="0" cellspacing="0" cellpadding="0">
+                      <tr>
+                      </tr>
+                 </table>
+                  <br/>
+                <br/>
+                <center> <input type="button" onclick="nextfinish()" value="完成"></center>
+                <center> <input type="button" onclick="nextagain()" value="重新生成"></center>
+             </div>
+             <div id="tab5"  style="display: none;" align="center">
+                 <table id="tab6" width="100%" border="0" cellspacing="0" cellpadding="0">
+                      <tr id="firstid">
+                      
+                        
+                      </tr>
+                      
+                 </table>
+                 <br/><br/> 
+                <a href='javascript:void(0);' onclick="nextfive(3)">首页</a>
+                 <a href='javascript:void(0);' onclick="nextfive(1)">上一页</a>
+                 <a href='javascript:void(0);' onclick='nextfive(2)'>下一页</a> 
+                 <a href='javascript:void(0);' onclick="nextfive(4)">尾页</a>
+                 <input type='button' onclick='nextfinish()' value='完成'></center>
+             </div>
+        </form>
+        
+        
+    </div>
+</div>

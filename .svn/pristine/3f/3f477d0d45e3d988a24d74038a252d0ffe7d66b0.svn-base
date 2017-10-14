@@ -1,0 +1,16 @@
+package com.wangzhixuan.service;
+
+import com.wangzhixuan.model.DataDictionary;
+import com.baomidou.mybatisplus.service.IService;
+
+/**
+ * <p>
+ *  服务类
+ * </p>
+ *
+ * @author sunbq
+ * @since 2017-09-12
+ */
+public interface IDataDictionaryService extends IService<DataDictionary> {
+	Object getType();
+}

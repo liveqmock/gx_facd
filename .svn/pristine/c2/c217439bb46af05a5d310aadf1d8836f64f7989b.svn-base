@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.wangzhixuan.mapper.VideoFileMapper">
+
+	<!-- 通用查询映射结果 -->
+	<resultMap id="BaseResultMap" type="com.wangzhixuan.model.VideoFile">
+		<id column="id" property="id" />
+		<result column="fileName" property="fileName" />
+		<result column="fileUrl" property="fileUrl" />
+		<result column="createTime" property="createTime" />
+		<result column="userId" property="userId" />
+		<result column="remarks" property="remarks" />
+		<result column="video_status" property="videostatus"/>
+		<result column="video_img" property="videoimg"/>
+	</resultMap>
+
+   <select id="selectvoidFilePage" resultType="map">
+     select v.id,v.fileName,v.fileUrl,v.createTime,v.remarks,v.video_type,v.diskPath, v.video_img,u.name username
+      FROM video_file v  LEFT JOIN user u ON v.userId = u.id WHERE 1=1
+      <if test="userName != null and userName != '' ">
+       and u.name LIKE CONCAT('%', #{userName}, '%')  
+      </if>
+      <if test="videostatus != null and videostatus != -1">
+         and v.video_status = #{videostatus}
+      </if>
+       <if test=" recvDateStart != null ">
+                <![CDATA[ and v.createTime >= #{recvDateStart} ]]>
+       </if>
+       <if test=" recvDateEnd != null ">
+                <![CDATA[ and v.createTime <= #{recvDateEnd} ]]>
+       </if>
+      order by createTime desc
+   </select>
+   <select id="selectByInputValue" resultType="com.wangzhixuan.model.VideoFile">
+       select * from video_file WHERE fileName LIKE CONCAT('%',#{fileName },'%')
+   </select>
+</mapper>

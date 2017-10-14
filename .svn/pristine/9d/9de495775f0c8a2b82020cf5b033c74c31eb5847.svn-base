@@ -1,0 +1,102 @@
+package com.wangzhixuan.model;
+
+import com.baomidou.mybatisplus.enums.IdType;
+import java.util.Date;
+import com.baomidou.mybatisplus.annotations.TableId;
+import com.baomidou.mybatisplus.annotations.TableField;
+import com.baomidou.mybatisplus.activerecord.Model;
+import com.baomidou.mybatisplus.annotations.TableName;
+import java.io.Serializable;
+
+/**
+ * <p>
+ * 公告阅读表
+ * </p>
+ *
+ * @author sunbq
+ * @since 2017-06-07
+ */
+@TableName("notice_read")
+public class NoticeRead extends Model<NoticeRead> {
+
+    private static final long serialVersionUID = 1L;
+
+    /**
+     * 编号
+     */
+	@TableId(value="id", type= IdType.AUTO)
+	private Long id;
+    /**
+     * 公告ID
+     */
+	private String nid;
+    /**
+     * 用户ID
+     */
+	private String uid;
+	/**
+	 * 消息状态 0-删除；1-正常
+	 */
+	private Integer nstatus;
+    /**
+     * 阅读状态 0:未读 1-已读
+     */
+	private Integer status;
+	@TableField("create_time")
+	private Date createTime;
+
+
+	public Long getId() {
+		return id;
+	}
+
+	public void setId(Long id) {
+		this.id = id;
+	}
+
+	public String getNid() {
+		return nid;
+	}
+
+	public void setNid(String nid) {
+		this.nid = nid;
+	}
+
+	public String getUid() {
+		return uid;
+	}
+
+	public void setUid(String uid) {
+		this.uid = uid;
+	}
+
+	public Integer getNstatus() {
+		return nstatus;
+	}
+
+	public void setNstatus(Integer nstatus) {
+		this.nstatus = nstatus;
+	}
+
+	public Integer getStatus() {
+		return status;
+	}
+
+	public void setStatus(Integer status) {
+		this.status = status;
+	}
+
+	public Date getCreateTime() {
+		return createTime;
+	}
+
+	public void setCreateTime(Date createTime) {
+		this.createTime = createTime;
+	}
+
+	@Override
+	protected Serializable pkVal() {
+		return this.id;
+	}
+
+}

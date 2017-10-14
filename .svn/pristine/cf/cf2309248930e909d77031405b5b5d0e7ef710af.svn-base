@@ -1,0 +1,94 @@
+<%@ page language="java" contentType="text/html; charset=UTF-8" pageEncoding="UTF-8"%>
+<%@ include file="/commons/global.jsp" %>
+<script type="text/javascript" charset="utf-8" src="${staticPath }/static/Cesium/Cesium.js"></script>
+<style>
+    @import url(${staticPath }/static/Cesium/Widgets/widgets.css);
+    html, body, #cesiumContainer {
+        width: 100%; height: 100%; margin: 0; padding: 0; overflow: hidden;
+    }
+</style>
+<div id="cesiumContainer"></div>
+
+<script>
+
+    $(function(){
+            $.ajax({
+                type: "GET",
+                url: "${staticPath }/map/watchman",
+                data: "",
+                dataType: "json",
+                success: function(data){
+                    console.log(data);
+                    initMap(data);
+                }
+            });
+    });
+    function initMap(){
+        var mylongitude = 106.85417175292945;
+        var mylatitude = 22.34499936506692;
+        var myheight = 100000;
+
+        //全球影像地图服务
+        var viewer = new Cesium.Viewer("cesiumContainer", {
+            animation: false,  //是否显示动画控件
+            baseLayerPicker: false, //是否显示图层选择控件
+            //geocoder: true, //是否显示地名查找控件,默认true
+            timeline: false, //是否显示时间线控件
+            sceneModePicker: true, //是否显示投影方式控件
+            navigationHelpButton: false, //是否显示帮助信息控件
+            infoBox: true,  //是否显示点击要素之后显示的信息
+            fullscreenButton: false,
+            sceneMode: Cesium.SceneMode.SCENE2D,
+
+        });
+        viewer.imageryLayers.addImageryProvider(new Cesium.WebMapTileServiceImageryProvider({
+            url: "http://t0.tianditu.com/img_w/wmts?service=wmts&request=GetTile&version=1.0.0&LAYER=img&tileMatrixSet=w&TileMatrix={TileMatrix}&TileRow={TileRow}&TileCol={TileCol}&style=default&format=tiles",
+            //url: "http://www.mapgx.com/ime-server/rest/tdtgx_img/wmts?service=wmts&request=GetTile&version=1.0.0&LAYER=img&tileMatrixSet=w&TileMatrix={TileMatrix}&TileRow={TileRow}&TileCol={TileCol}&style=default&format=tiles",
+            layer: "tdtBasicLayer",
+            style: "default",
+            format: "image/jpeg",
+            tileMatrixSetID: "GoogleMapsCompatible",
+            show: false
+        }));
+
+        //默认cesium地图
+        // viewer = new Cesium.Viewer('cesiumContainer',{
+        //   animation:false, //动画控制，默认true
+        //   timeline:false,//时间线,默认true
+        //   sceneMode:Cesium.SceneMode.SCENE2D,
+        // } );
+
+        //全球影像中文注记服务
+        viewer.imageryLayers.addImageryProvider(new Cesium.WebMapTileServiceImageryProvider({
+            url: "http://t0.tianditu.com/cia_w/wmts?service=wmts&request=GetTile&version=1.0.0&LAYER=cia&tileMatrixSet=w&TileMatrix={TileMatrix}&TileRow={TileRow}&TileCol={TileCol}&style=default.jpg",
+            layer: "tdtAnnoLayer",
+            style: "default",
+            format: "image/jpeg",
+            tileMatrixSetID: "GoogleMapsCompatible",
+            show: false
+
+        }));
+
+        viewer.camera.setView({
+            destination: Cesium.Cartesian3.fromDegrees(mylongitude, mylatitude, myheight),
+            orientation: {
+                heading: 0.0,
+                pitch: -Cesium.Math.PI_OVER_TWO,
+                roll: 0.0
+            }
+        });
+        //设置HOME按钮定位到中国
+        Cesium.Rectangle.MAX_VALUE = Cesium.Rectangle.fromDegrees(65, -10, 145, 70);
+        Cesium.Camera.DEFAULT_VIEW_RECTANGLE = Cesium.Rectangle.fromDegrees(65, -10, 145, 70);
+
+
+        Cesium.Rectangle.MAX_VALUE = Cesium.Cartesian3.fromDegrees(mylongitude, mylatitude, myheight);
+        Cesium.Camera.DEFAULT_VIEW_RECTANGLE = Cesium.Cartesian3.fromDegrees(mylongitude, mylatitude, myheight);
+
+        //取消双击事件
+        viewer.cesiumWidget.screenSpaceEventHandler.removeInputAction(Cesium.ScreenSpaceEventType.LEFT_DOUBLE_CLICK);
+        //隐藏Cesium信息
+        viewer.bottomContainer.style.display = "none";
+    }
+
+</script>

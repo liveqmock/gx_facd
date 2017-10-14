@@ -1,0 +1,32 @@
+package com.wangzhixuan.service.impl;
+
+
+import com.wangzhixuan.model.Subject;
+import com.wangzhixuan.mapper.SubjectMapper;
+import com.wangzhixuan.service.ISubjectService;
+import com.baomidou.mybatisplus.service.impl.ServiceImpl;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+
+import java.util.List;
+import java.util.Map;
+
+/**
+ * <p>
+ * 题库表 服务实现类
+ * </p>
+ *
+ * @author sunbq
+ * @since 2017-08-22
+ */
+@Service
+public class SubjectServiceImpl extends ServiceImpl<SubjectMapper, Subject> implements ISubjectService {
+
+    @Autowired
+    private SubjectMapper subjectMapper;
+
+    @Override
+    public List<Subject> selectByRandom(Map<String, Object> params) {
+        return subjectMapper.selectByRandom(params);
+    }
+}

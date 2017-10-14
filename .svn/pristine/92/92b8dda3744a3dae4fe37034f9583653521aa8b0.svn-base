@@ -1,0 +1,20 @@
+package com.wangzhixuan.service.impl;
+
+import com.wangzhixuan.model.KnowledgeType;
+import com.wangzhixuan.mapper.KnowledgeTypeMapper;
+import com.wangzhixuan.service.IKnowledgeTypeService;
+import com.baomidou.mybatisplus.service.impl.ServiceImpl;
+import org.springframework.stereotype.Service;
+
+/**
+ * <p>
+ * 边防知识类别表 服务实现类
+ * </p>
+ *
+ * @author sunbq
+ * @since 2017-08-22
+ */
+@Service
+public class KnowledgeTypeServiceImpl extends ServiceImpl<KnowledgeTypeMapper, KnowledgeType> implements IKnowledgeTypeService {
+	
+}

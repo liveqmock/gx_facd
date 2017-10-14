@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.wangzhixuan.mapper.PatrolTrailMapper">
+
+	<!-- 通用查询映射结果 -->
+	<resultMap id="BaseResultMap" type="com.wangzhixuan.model.PatrolTrail">
+		<id column="id" property="id" />
+		<result column="pid" property="pid" />
+		<result column="longitude" property="longitude" />
+		<result column="latitude" property="latitude" />
+		<result column="interval" property="interval" />
+		<result column="movetype" property="movetype" />
+		<result column="speed" property="speed" />
+		<result column="create_time" property="createTime" />
+	</resultMap>
+
+</mapper>

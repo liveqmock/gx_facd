@@ -1,0 +1,20 @@
+package com.wangzhixuan.service.impl;
+
+import com.wangzhixuan.model.Score;
+import com.wangzhixuan.mapper.ScoreMapper;
+import com.wangzhixuan.service.IScoreService;
+import com.baomidou.mybatisplus.service.impl.ServiceImpl;
+import org.springframework.stereotype.Service;
+
+/**
+ * <p>
+ * 成绩报表 服务实现类
+ * </p>
+ *
+ * @author sunbq
+ * @since 2017-08-22
+ */
+@Service
+public class ScoreServiceImpl extends ServiceImpl<ScoreMapper, Score> implements IScoreService {
+	
+}

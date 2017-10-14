@@ -1,0 +1,20 @@
+package com.wangzhixuan.service.impl;
+
+import com.wangzhixuan.model.BorderKnowledge;
+import com.wangzhixuan.mapper.BorderKnowledgeMapper;
+import com.wangzhixuan.service.IBorderKnowledgeService;
+import com.baomidou.mybatisplus.service.impl.ServiceImpl;
+import org.springframework.stereotype.Service;
+
+/**
+ * <p>
+ * 边防知识表 服务实现类
+ * </p>
+ *
+ * @author sunbq
+ * @since 2017-08-22
+ */
+@Service
+public class BorderKnowledgeServiceImpl extends ServiceImpl<BorderKnowledgeMapper, BorderKnowledge> implements IBorderKnowledgeService {
+	
+}

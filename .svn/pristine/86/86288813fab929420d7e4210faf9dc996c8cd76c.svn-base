@@ -1,0 +1,56 @@
+package com.wangzhixuan.model;
+
+import com.baomidou.mybatisplus.annotations.TableField;
+import com.baomidou.mybatisplus.activerecord.Model;
+import com.baomidou.mybatisplus.annotations.TableName;
+import java.io.Serializable;
+
+/**
+ * <p>
+ * 
+ * </p>
+ *
+ * @author sunbq
+ * @since 2017-09-12
+ */
+@TableName("data_type")
+public class DataType extends Model<DataType> {
+
+    private static final long serialVersionUID = 1L;
+
+	private Integer id;
+	@TableField("data_type")
+	private String dataType;
+	private String type;
+
+
+	public Integer getId() {
+		return id;
+	}
+
+	public void setId(Integer id) {
+		this.id = id;
+	}
+
+	public String getDataType() {
+		return dataType;
+	}
+
+	public void setDataType(String dataType) {
+		this.dataType = dataType;
+	}
+
+	public String getType() {
+		return type;
+	}
+
+	public void setType(String type) {
+		this.type = type;
+	}
+
+	@Override
+	protected Serializable pkVal() {
+		return this.id;
+	}
+
+}

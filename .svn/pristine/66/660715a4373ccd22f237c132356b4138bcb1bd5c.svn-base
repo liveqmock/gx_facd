@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.wangzhixuan.mapper.TopicalInfoMapper">
+
+	<!-- 通用查询映射结果 -->
+	<resultMap id="BaseResultMap" type="com.wangzhixuan.model.TopicalInfo">
+		<id column="id" property="id" />
+		<result column="title" property="title" />
+		<result column="content" property="content" />
+		<result column="createUser" property="createUser" />
+		<result column="createTime" property="createTime" />
+		<result column="status" property="status" />
+	</resultMap>
+
+
+   <select id="selectvoidFilePage" resultType="map">
+     select t.id,t.title,t.content,t.createUser,t.createTime,t.status FROM topical_info t where 1=1
+      <if test="title != null and title != '' ">
+       and t.title LIKE concat('%', #{title}, '%')  
+      </if>
+      <if test="createUser != null and createUser != ''">
+         and t.createUser LIKE concat('%', #{createUser},'%')
+      </if>
+       <if test=" startDate != null ">
+                <![CDATA[ and t.createTime >= #{startDate} ]]>
+       </if>
+       <if test=" endDate != null ">
+                <![CDATA[ and t.createTime <= #{endDate} ]]>
+       </if>
+   </select>
+   
+   <select id="selectByStatus" resultType="Map">
+      select t.id,t.title,t.content,t.createUser,t.createTime,i.fileurl from topical_info t LEFT JOIN item_file i ON t.id=i.ownerid where t.status=1 and i.type=2
+      order by t.createTime desc
+   </select>
+   <insert id="insertAndGetId" useGeneratedKeys="true" keyProperty="id" parameterType="com.wangzhixuan.model.TopicalInfo">
+      insert into topical_info (title,content,createUser,createTime,status) values (#{title},#{content},#{createUser},#{createTime},#{status});
+   </insert>
+   
+</mapper>

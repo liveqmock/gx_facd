@@ -1,0 +1,20 @@
+package com.wangzhixuan.service.impl;
+
+import com.wangzhixuan.model.Subject;
+import com.wangzhixuan.mapper.SubjectMapper;
+import com.wangzhixuan.service.ISubjectService;
+import com.baomidou.mybatisplus.service.impl.ServiceImpl;
+import org.springframework.stereotype.Service;
+
+/**
+ * <p>
+ * 题库表 服务实现类
+ * </p>
+ *
+ * @author sunbq
+ * @since 2017-08-22
+ */
+@Service
+public class SubjectServiceImpl extends ServiceImpl<SubjectMapper, Subject> implements ISubjectService {
+	
+}

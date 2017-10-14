@@ -1,0 +1,20 @@
+package com.wangzhixuan.service;
+
+import com.wangzhixuan.commons.result.PageInfo;
+import com.wangzhixuan.model.VideoFile;
+import com.baomidou.mybatisplus.service.IService;
+
+/**
+ * <p>
+ *  服务类
+ * </p>
+ *
+ * @author sunbq
+ * @since 2017-08-07
+ */
+public interface IVideoFileService extends IService<VideoFile> {
+	
+	void selectDataGrid(PageInfo pageInfo);
+	VideoFile selectByInputValue(String fileName);
+	VideoFile selectByUUid(String uuid);
+}

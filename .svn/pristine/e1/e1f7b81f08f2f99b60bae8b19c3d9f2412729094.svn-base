@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.wangzhixuan.mapper.LiveVideoMapper">
+
+	<!-- 通用查询映射结果 -->
+	<resultMap id="BaseResultMap" type="com.wangzhixuan.model.LiveVideo">
+		<id column="id" property="id" />
+		<result column="live_id" property="liveId" />
+		<result column="receive_id" property="receiveId" />
+		<result column="url" property="url" />
+		<result column="status" property="status" />
+		<result column="time_mark" property="timeMark" />
+		<result column="type" property="type" />
+		<result column="create_time" property="createTime" />
+		<result column="start_time" property="startTime" />
+		<result column="end_time" property="endTime" />
+		<result column="patrolid" property="patrolid"/>
+	</resultMap>
+
+</mapper>

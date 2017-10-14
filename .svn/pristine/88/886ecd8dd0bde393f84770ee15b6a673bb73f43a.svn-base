@@ -1,0 +1,202 @@
+<%@ page language="java" contentType="text/html; charset=UTF-8" pageEncoding="UTF-8"%>
+<%@ include file="/commons/global.jsp" %>
+<script type="text/javascript">
+   var i = 3;
+    $(function() {
+        $('#examinationAddForm').form({
+            url : '${path}/examination/add',
+            onSubmit : function() {
+                progressLoad();
+                var isValid = $(this).form('validate');
+                if (!isValid) {
+                    progressClose();
+                }
+                return isValid;
+            },
+            success : function(result) {
+                progressClose();
+                result = $.parseJSON(result);
+                if (result.success) {
+                    //之所以能在这里调用到parent.$.modalDialog.openner_dataGrid这个对象，是因为user.jsp页面预定义好了
+                    parent.$.modalDialog.openner_dataGrid.datagrid('reload');
+                    parent.$.modalDialog.handler.dialog('close');
+                } else {
+                    var form = $('#examinationAddForm');
+                    parent.$.messager.alert('错误', result.msg, 'error');
+                }
+            }
+        });
+    });
+    
+    function nextOne(){
+    	
+        $("#tab").hide();
+        $("#tab2").css('display','block');
+    }
+    
+    function nextTow(){
+    	
+        $("#tab2").hide();
+        $("#tab3").css('display','block');
+    }
+    
+    function nextThree(){
+    	 var a = $('.textbox-value').val();
+    	 alert(a);
+    	 var b = $('#num').val();
+    	 var $tr= $("#tab4 tr:last");
+    	 if(a==0){
+    		 alert("你还没有选择！")
+    		 return;
+    	 }
+    	 if(a==1){
+    		 $.ajax({
+					url:"${path}/examination/selectRandom?num="+b,
+					type:"post",
+					dataType:"json",
+					success:function(result){
+						console.log(result);
+						 $("#tab3").hide();
+					        $("#tab4").css('display','block');
+					        alert(result);
+					        var arr = result.obj;
+					        for(var i=0;i<arr.length;i++){
+					        	var v = arr[i];
+					        	
+								 $tr.after("<tr><td>"+v.title+"</td><td>"+v.level+"</td><td>"+v.name+"</td><td>"++"</td></tr>");
+							 console.log("<tr><td>"+v.title+"</td><td>"+v.level+"</td><td>"+v.name+"</td><td>"+jsonDateFormat(v.createTime)+"</td></tr>");
+							 
+					        }
+					}
+				});
+    	 }
+        $("#tab3").hide();
+        $("#tab4").css('display','block');
+    }
+    
+    function nextfinish(){
+        $("#tab").hide();
+        $("#tab2").css('display','block');
+    }
+    
+    function nextagain(){
+    	 var b = $('#num').val();
+    	 $.ajax({
+				url:"${path}/examination/selectRandom?num="+b,
+				type:"post",
+				dataType:"json",
+				success:function(result){
+					 $("#tab3").hide();
+				        $("#tab4").css('display','block');
+				        for(var v in result){
+				        	var dateObj = JSON.parse(birthday);
+				        	var date = new Date(dateObj.time);
+				        	var dateStr = date.getFullYear() + '-' + getMonth() + '-' + getDate();
+							 $tr.after("<tr><td>"+result.obj.title+"</td><td>"+result[v].level+"</td><td>"+result[v].name+"</td><td>"+result[v].createTime+"</td></tr>");
+						 
+				        }
+				}
+			});
+    }
+    
+    function jsonDateFormat(jsonDate) {//json日期格式转换为正常格式
+    	var jsonDateStr = jsonDate.toString();//此处用到toString（）是为了让传入的值为字符串类型，目的是为了避免传入的数据类型不支持.replace（）方法
+        alert(jsonDateStr);
+    	try {
+    	var date = new Date(parseInt(jsonDateStr.replace("/Date(", "").replace(")/", ""), 10));
+    	var month = date.getMonth() + 1 < 10 ? "0" + (date.getMonth() + 1) : date.getMonth() + 1;
+    	var day = date.getDate() < 10 ? "0" + date.getDate() : date.getDate();
+    	var hours = date.getHours();
+    	var minutes = date.getMinutes();
+    	var seconds = date.getSeconds();
+    	var milliseconds = date.getMilliseconds();
+    	return date.getFullYear() + "-" + month + "-" + day + " " + hours + ":" + minutes + ":" + seconds + "." + milliseconds;
+    	} catch (ex) {
+    	return "时间格式转换错误";
+    	}
+    	}
+</script>
+<div class="easyui-layout" data-options="fit:true,border:false" >
+    <div data-options="region:'center',border:false" style="overflow-y:scroll; overflow-x:scroll;padding: 3px;" >
+        <form id="examinationAddForm" method="post" enctype="multipart/form-data">
+           <div id="tab" >
+            <table class="grid" >
+                <tr >
+                   <td >  标题：</td>
+                    <td ><input name="title" type="text" placeholder="请输入标题" class="easyui-validatebox span2" data-options="required:true" value=""></td>
+                 <td>类型</td>
+                    <td><select id="type" name="type" class="easyui-combobox"
+                                data-options="width:140,height:29,editable:false,panelHeight:'auto'">
+	                     <option value="0">请选择</option>
+	                     <option value="1">随机选题</option>
+                         <option value="2">手动选题</option>
+                       </select>
+                    </td>
+                </tr> 
+                 <tr>
+                  <td>考试开始日期</td>
+					<td>
+                        <input onclick="WdatePicker({readOnly:true,dateFmt:'yyyy-MM-dd'})" name="begin_time" placeholder="点击选择时间" type="text" class="easyui-validatebox span2" data-options="required:true" id="datetime" />
+                        </td>
+               
+                    <td>考试截止日期</td>
+					<td>
+                        <input onclick="WdatePicker({readOnly:true,dateFmt:'yyyy-MM-dd'})" name="end_time" placeholder="点击选择时间" type="text" class="easyui-validatebox span2" data-options="required:true" id="datetime" />
+                        </td>
+                 </tr>
+            </table  >
+            <br/>
+            <br/>
+            
+                           <center> <input type="button" onclick="nextOne()" value="下一步"></center>
+                        </div>  
+          
+            <div id="tab3"  style="display: none;">
+             <table>
+                 <tr>
+                    <td>
+                                                                              请输入随机选题的数量
+                    </td>
+                    <td>
+                        <input type="text" id="num" name="num"/>
+                    </td>
+                 </tr>
+             </table>
+             <br/>
+                <br/>
+                <center> <input type="button" onclick="nextThree()" value="下一步"></center>
+            </div>
+             <div id="tab4"  style="display: none;">
+                 <table>
+                      <tr>
+                         <th>标题</th>
+                         <th>难度</th>
+                          <th>创建人</th>
+                         <th>创建时间</th>
+                      </tr>
+                 </table>
+                  <br/>
+                <br/>
+                <center> <input type="button" onclick="nextfinish()" value="完成"></center>
+                <center> <input type="button" onclick="nextagain()" value="重新生成"></center>
+             </div>
+             <div id="tab4"  style="display: none;">
+                 <table>
+                      <tr>
+                      <th><input type="checkbox" name='id'/></th>
+                         <th>标题</th>
+                         <th>难度</th>
+                          <th>创建人</th>
+                         <th>创建时间</th>
+                      </tr>
+                      
+                 </table>
+                  <br/>
+                <br/>
+                <center> <input type="button" onclick="nextfinish()" value="下一步"></center>
+             </div>
+        </form>
+        
+        
+    </div>
+</div>

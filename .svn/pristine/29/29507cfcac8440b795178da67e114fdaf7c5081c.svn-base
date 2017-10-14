@@ -1,0 +1,30 @@
+package com.wangzhixuan.service;
+
+import com.wangzhixuan.commons.result.PageInfo;
+import com.wangzhixuan.model.DailyPatrol;
+
+import java.util.List;
+import java.util.Map;
+
+import com.baomidou.mybatisplus.service.IService;
+
+/**
+ * <p>
+ * 巡防（考勤表） 服务类
+ * </p>
+ *
+ * @author sunbq
+ * @since 2017-06-05
+ */
+public interface IDailyPatrolService extends IService<DailyPatrol> {
+
+	void selectDataGrid(PageInfo pageInfo);
+	
+	Object selectTree();
+
+	List<Map<String, Object>> selectFormList(Integer year);
+
+	Map<String, Object> selectForm(Integer year, String patrolId);
+
+	DailyPatrol selectByUUid(String uuid);
+}

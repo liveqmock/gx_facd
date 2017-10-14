@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.wangzhixuan.mapper.KnowledgeTypeMapper">
+
+	<!-- 通用查询映射结果 -->
+	<resultMap id="BaseResultMap" type="com.wangzhixuan.model.KnowledgeType">
+		<id column="id" property="id" />
+		<result column="name" property="name" />
+		<result column="status" property="status" />
+	</resultMap>
+
+<insert id="insertAndGetId" useGeneratedKeys="true" keyProperty="id" parameterType="com.wangzhixuan.model.Examination">  
+    insert into knowledge_type(name,status)  
+    values(#{name},#{status})  
+</insert> 
+</mapper>

@@ -1,0 +1,254 @@
+package com.wangzhixuan.model;
+
+import com.baomidou.mybatisplus.enums.IdType;
+import java.util.Date;
+import com.baomidou.mybatisplus.annotations.TableId;
+import com.baomidou.mybatisplus.annotations.TableField;
+import com.baomidou.mybatisplus.activerecord.Model;
+import com.baomidou.mybatisplus.annotations.TableName;
+import java.io.Serializable;
+
+/**
+ * <p>
+ * 报送信息
+ * </p>
+ *
+ * @author sunbq
+ * @since 2017-06-05
+ */
+@TableName("send_info")
+public class SendInfo extends Model<SendInfo> {
+
+    private static final long serialVersionUID = 1L;
+
+    /**
+     * 编号
+     */
+	@TableId(value="id", type= IdType.AUTO)
+	private Long id;
+    /**
+     * 巡防编号
+     */
+	private Long pid;
+    /**
+     * 报送信息名称
+     */
+	@TableField("send_info_name")
+	private String sendInfoName;
+    /**
+     * 报送信息类型：0-基础设施；1-涉外事件；2-走私事件；3-突发事件
+     */
+	@TableField("send_info_type")
+	private Integer sendInfoType;
+    /**
+     * 报送信息内容
+     */
+	@TableField("send_info")
+	private String sendInfo;
+    /**
+     * 紧急程度： 0:一般；1：紧急；2：特急
+     */
+	@TableField("urgency_level")
+	private Integer urgencyLevel;
+    /**
+     * 经度
+     */
+	private Double longitude;
+    /**
+     * 纬度
+     */
+	private Double latitude;
+    /**
+     * 报送人_id
+     */
+	@TableField("send_id")
+	private Long sendId;
+    /**
+     * 接收报送时间
+     */
+	@TableField("receive_time")
+	private Date receiveTime;
+    /**
+     * 审核人_id
+     */
+	@TableField("verify_id")
+	private Long verifyId;
+    /**
+     * 审核时间
+     */
+	@TableField("verify_time")
+	private Date verifyTime;
+    /**
+     * 信息状态：0-未查看；1-信息已查看；2-审核已通过；3-审核未通过
+     */
+	@TableField("info_status")
+	private Integer infoStatus;
+    /**
+     * 数据状态：0-删除；1-正常
+     */
+	@TableField("data_status")
+	private Integer dataStatus;
+    /**
+     * 数据来源
+     */
+	@TableField("data_origin")
+	private Integer dataOrigin;
+    /**
+     * 反馈
+     */
+	private String feedback;
+	@TableField(exist=false)
+	private String sendusername;
+	
+	private String uuid;
+	
+	
+
+	public String getUuid() {
+		return uuid;
+	}
+
+	public void setUuid(String uuid) {
+		this.uuid = uuid;
+	}
+
+	public Long getId() {
+		return id;
+	}
+
+	public void setId(Long id) {
+		this.id = id;
+	}
+
+	public Long getPid() {
+		return pid;
+	}
+
+	public void setPid(Long pid) {
+		this.pid = pid;
+	}
+
+	public String getSendInfoName() {
+		return sendInfoName;
+	}
+
+	public void setSendInfoName(String sendInfoName) {
+		this.sendInfoName = sendInfoName;
+	}
+
+	public Integer getSendInfoType() {
+		return sendInfoType;
+	}
+
+	public void setSendInfoType(Integer sendInfoType) {
+		this.sendInfoType = sendInfoType;
+	}
+
+	public String getSendInfo() {
+		return sendInfo;
+	}
+
+	public void setSendInfo(String sendInfo) {
+		this.sendInfo = sendInfo;
+	}
+
+	public Integer getUrgencyLevel() {
+		return urgencyLevel;
+	}
+
+	public void setUrgencyLevel(Integer urgencyLevel) {
+		this.urgencyLevel = urgencyLevel;
+	}
+
+	public Double getLongitude() {
+		return longitude;
+	}
+
+	public void setLongitude(Double longitude) {
+		this.longitude = longitude;
+	}
+
+	public Double getLatitude() {
+		return latitude;
+	}
+
+	public void setLatitude(Double latitude) {
+		this.latitude = latitude;
+	}
+
+	public Long getSendId() {
+		return sendId;
+	}
+
+	public void setSendId(Long sendId) {
+		this.sendId = sendId;
+	}
+
+	public Date getReceiveTime() {
+		return receiveTime;
+	}
+
+	public void setReceiveTime(Date receiveTime) {
+		this.receiveTime = receiveTime;
+	}
+
+	public Long getVerifyId() {
+		return verifyId;
+	}
+
+	public void setVerifyId(Long verifyId) {
+		this.verifyId = verifyId;
+	}
+
+	public Date getVerifyTime() {
+		return verifyTime;
+	}
+
+	public void setVerifyTime(Date verifyTime) {
+		this.verifyTime = verifyTime;
+	}
+
+	public Integer getInfoStatus() {
+		return infoStatus;
+	}
+
+	public void setInfoStatus(Integer infoStatus) {
+		this.infoStatus = infoStatus;
+	}
+
+	public Integer getDataStatus() {
+		return dataStatus;
+	}
+
+	public void setDataStatus(Integer dataStatus) {
+		this.dataStatus = dataStatus;
+	}
+
+	public Integer getDataOrigin() {
+		return dataOrigin;
+	}
+
+	public void setDataOrigin(Integer dataOrigin) {
+		this.dataOrigin = dataOrigin;
+	}
+
+	public String getFeedback() {
+		return feedback;
+	}
+
+	public void setFeedback(String feedback) {
+		this.feedback = feedback;
+	}
+
+	@Override
+	protected Serializable pkVal() {
+		return this.id;
+	}
+	public String getSendusername() {
+		return sendusername;
+	}
+
+	public void setSendusername(String sendusername) {
+		this.sendusername = sendusername;
+	}
+}

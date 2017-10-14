@@ -1,0 +1,88 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.wangzhixuan.mapper.PositionMarkMapper">
+
+	<!-- 通用查询映射结果 -->
+	<resultMap id="BaseResultMap" type="com.wangzhixuan.model.PositionMark">
+		<id column="id" property="id" />
+		<result column="pid" property="pid" />
+		<result column="mmid" property="mmid" />
+		<result column="name" property="name" />
+		<result column="type" property="type" />
+		<result column="longitude" property="longitude" />
+		<result column="latitude" property="latitude" />
+		<result column="info" property="info" />
+		<result column="verify_id" property="verifyId" />
+		<result column="verify_time" property="verifyTime" />
+		<result column="uid" property="uid" />
+		<result column="info_status" property="infoStatus" />
+		<result column="attachment_url" property="attachmentUrl" />
+		<result column="create_time" property="createTime" />
+		<result column="remark" property="remark" />
+		<result column="uuid" property="uuid" />
+	</resultMap>
+	<select id="selectbasePage" resultType="Map">
+		SELECT
+			p.id AS id,
+			p.pid AS pid,
+			p. NAME AS name,
+			p.type AS type,
+			p.info AS info,
+			0 AS lvlel,
+			u. NAME AS userName,
+			p.info_status AS infoStatus,
+			p.create_time AS createTime,
+			1 as data
+		FROM
+			position_mark p
+		LEFT JOIN user u ON u.id = p.uid
+		WHERE
+			p.info_status IN (0, 1)
+		UNION
+			SELECT
+				s.id AS id,
+				s.pid AS pid,
+				s.send_info_name AS name,
+				s.send_info_type AS type,
+				s.send_info AS send_info,
+				s.urgency_level AS lvlel,
+				u. NAME AS userName,
+				s.info_status AS infoStatus,
+				s.receive_time AS createTime,
+				2 as data
+			FROM
+				send_info s
+			LEFT JOIN user u ON u.id = s.send_id
+			WHERE
+				s.info_status IN (0, 1)
+    </select>
+    
+       <select id="selectExcle" resultType="com.wangzhixuan.model.PositionMark">
+        SELECT 
+       u.name AS username,
+        p.name as name,
+        p.type AS type,  
+        p.longitude AS longitude, 
+        p.latitude AS latitude,
+        p.info_status AS infoStatus,
+        p.create_time  AS createTime
+        
+        FROM position_mark p
+        LEFT JOIN user u ON p.uid = u.id WHERE 
+        <choose>  
+	            <when test="stype!=2">  
+	               p.info_status != 2
+	            </when >  
+	            <otherwise>  
+	            	p.info_status = 2 
+	            </otherwise>  
+	        </choose>  
+            <if test=" name != null and name != '' ">
+               and p.name LIKE CONCAT('%', #{name}, '%')  
+            </if>
+            <if test=" type != null and type != -1 ">
+                AND p.type = #{type}
+            </if>
+            
+    </select>
+</mapper>

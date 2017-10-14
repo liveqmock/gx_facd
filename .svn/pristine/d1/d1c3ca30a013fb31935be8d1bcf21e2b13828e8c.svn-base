@@ -1,0 +1,20 @@
+package com.wangzhixuan.service.impl;
+
+import com.wangzhixuan.model.TopicalInfo;
+import com.wangzhixuan.mapper.TopicalInfoMapper;
+import com.wangzhixuan.service.ITopicalInfoService;
+import com.baomidou.mybatisplus.service.impl.ServiceImpl;
+import org.springframework.stereotype.Service;
+
+/**
+ * <p>
+ * 时事信息表 服务实现类
+ * </p>
+ *
+ * @author sunbq
+ * @since 2017-08-22
+ */
+@Service
+public class TopicalInfoServiceImpl extends ServiceImpl<TopicalInfoMapper, TopicalInfo> implements ITopicalInfoService {
+	
+}

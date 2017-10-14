@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.wangzhixuan.mapper.OrganizationMapper">
+
+    <!-- 通用查询结果列-->
+    <sql id="Base_Column_List">
+        id, name, address, code, icon, pid, seq, create_time AS createTime
+    </sql>
+	<select id="selectOrganizationDePid" parameterType="String" resultType="String">
+        select distinct pid from organization where id=#{receiver}
+    </select>
+    <select id="selectOrganizationDeId" parameterType="int" resultType="int">
+        select id from organization where id=#{receiver}
+    </select>
+    <select	id="selectListJh" parameterType="String" resultType="Organization">
+    		select *  from organization where pid=#{receiver} 
+    </select>
+   	 <select id="selectListZl" parameterType="String" resultType="Organization">
+   	 	select *  from organization where pid=#{receiver}
+   	 </select>
+   	  <select id="selectListZh" parameterType="String" resultType="Organization">
+   	 	select *  from organization where id=#{receiver} 
+   	 </select>
+</mapper>

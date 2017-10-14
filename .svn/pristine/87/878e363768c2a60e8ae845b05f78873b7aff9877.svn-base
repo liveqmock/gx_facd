@@ -1,0 +1,77 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.wangzhixuan.mapper.DailyPatrolMapper">
+
+	<!-- 通用查询映射结果 -->
+	<resultMap id="BaseResultMap" type="com.wangzhixuan.model.DailyPatrol">
+		<id column="id" property="id" />
+        <result column="patrol_id" property="patrolId" />
+        <result column="route_id" property="routeId" />
+        <result column="start_time" property="startTime" />
+        <result column="end_time" property="endTime" />
+        <result column="reportcount" property="reportcount" />
+        <result column="tagcount" property="tagcount" />
+        <result column="time" property="time" />
+        <result column="patroldistance" property="patrolDistance" />
+        <result column="end_status" property="endStatus" />
+        <result column="uuid" property="uuid" />
+    </resultMap>
+    
+    <select id="selectbyPage" resultType="Map">
+        SELECT
+            dp.id,
+            dp.patrol_id patrolId,
+            dp.route_id routeId,
+            dp.start_time startTime,
+            dp.end_time endTime,
+            dp.reportcount,
+            dp.tagcount,
+            dp.time,dp.end_status endStatus,
+            u.name as uname,
+            r.name as rname
+        FROM daily_patrol dp
+        LEFT JOIN `user` u ON u.id = dp.patrol_id
+        LEFT JOIN road r ON r.id = dp.route_id
+        <where>
+        	1=1
+            <if test=" uname != null and uname != '' ">
+               and u.name LIKE #{uname}
+            </if>
+            <if test=" rname != null and rname != '' ">
+               and r.name LIKE #{rname}
+            </if>
+            <if test=" startTime != null ">
+                <![CDATA[ and dp.start_time >= #{startTime} ]]>
+            </if>
+            <if test=" endTime != null ">
+                <![CDATA[ and dp.end_time <= #{endTime} ]]>
+            </if>
+        </where>
+    </select>
+    <select id="selectrpList" resultType="Map" >
+	    SELECT 
+			SUM(CASE WHEN MONTH(dp.start_time) =1 THEN dp.reportcount ELSE 0 END) jan,   
+			SUM(CASE WHEN MONTH(dp.start_time) =2 THEN dp.reportcount ELSE 0 END) feb,
+			SUM(CASE WHEN MONTH(dp.start_time) =3 THEN dp.reportcount ELSE 0 END) mar,
+			SUM(CASE WHEN MONTH(dp.start_time) =4 THEN dp.reportcount ELSE 0 END) apr,
+			SUM(CASE WHEN MONTH(dp.start_time) =5 THEN dp.reportcount ELSE 0 END) may,
+			SUM(CASE WHEN MONTH(dp.start_time) =6 THEN dp.reportcount ELSE 0 END) jun,
+			SUM(CASE WHEN MONTH(dp.start_time) =7 THEN dp.reportcount ELSE 0 END) jul,
+			SUM(CASE WHEN MONTH(dp.start_time) =8 THEN dp.reportcount ELSE 0 END) aug,
+			SUM(CASE WHEN MONTH(dp.start_time) =9 THEN dp.reportcount ELSE 0 END) sep,
+			SUM(CASE WHEN MONTH(dp.start_time) =10 THEN dp.reportcount ELSE 0 END) octb,
+			SUM(CASE WHEN MONTH(dp.start_time) =11 THEN dp.reportcount ELSE 0 END) nov,
+			SUM(CASE WHEN MONTH(dp.start_time) =12 THEN dp.reportcount ELSE 0 END) decb,
+			u.`name` as userName
+		FROM
+			daily_patrol dp,
+			`user` u
+		WHERE
+			dp.patrol_id = u.id
+			AND YEAR (dp.start_time) = #{year}
+		<if test=" uid != 0 ">
+			AND dp.patrol_id = #{uid}
+		</if>
+		GROUP BY userName
+    </select>
+</mapper>

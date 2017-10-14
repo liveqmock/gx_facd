@@ -1,0 +1,20 @@
+package com.wangzhixuan.service.impl;
+
+import com.wangzhixuan.model.MapMark;
+import com.wangzhixuan.mapper.MapMarkMapper;
+import com.wangzhixuan.service.IMapMarkService;
+import com.baomidou.mybatisplus.service.impl.ServiceImpl;
+import org.springframework.stereotype.Service;
+
+/**
+ * <p>
+ * 地图标记 服务实现类
+ * </p>
+ *
+ * @author sunbq
+ * @since 2017-06-12
+ */
+@Service
+public class MapMarkServiceImpl extends ServiceImpl<MapMarkMapper, MapMark> implements IMapMarkService {
+	
+}

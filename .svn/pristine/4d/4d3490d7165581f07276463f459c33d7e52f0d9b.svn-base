@@ -1,0 +1,59 @@
+package com.wangzhixuan.controller.phone;
+
+import java.text.SimpleDateFormat;
+import java.util.List;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Controller;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.ResponseBody;
+
+import com.wangzhixuan.commons.base.BaseController;
+import com.wangzhixuan.model.TopicalInfo;
+import com.wangzhixuan.service.ITopicalInfoService;
+
+import net.sf.json.JSONArray;
+import net.sf.json.JSONObject;
+
+@Controller
+@RequestMapping("/phoneExtended")
+public class PhoneExtendedController extends BaseController{
+
+	@Autowired
+	private ITopicalInfoService topicalInfoService;
+	/**
+	 * 手机时事信息列表查询接口
+	 * @return
+	 */
+	@RequestMapping("getReleased")
+	@ResponseBody
+	public Object selectByStatus() {
+		List<TopicalInfo> list=topicalInfoService.selectByStatus();
+		JSONArray array=new JSONArray();
+		SimpleDateFormat sdf=new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+		JSONObject jo=null;
+		TopicalInfo ti=null;
+		for(int i=0;i<list.size();i++) {
+			ti=list.get(i);
+			jo=new JSONObject();
+			jo.put("id", ti.getId());
+			jo.put("title", ti.getTitle());
+			jo.put("content", ti.getContent());
+			jo.put("createUser", ti.getCreateUser());
+			jo.put("createTime", sdf.format(ti.getCreateTime()));
+			array.add(jo);
+		}
+		return renderSuccess(array);
+	}
+	/**
+	 * 手机获取时事信息详情页接口
+	 * @param id
+	 * @return
+	 */
+	@GetMapping("getDetail")
+	@ResponseBody
+	public Object selectById(long id) {
+		return topicalInfoService.selectById(id);
+	}
+}

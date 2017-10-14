@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.wangzhixuan.mapper.OperateLogMapper">
+
+	<!-- 通用查询映射结果 -->
+	<resultMap id="BaseResultMap" type="com.wangzhixuan.model.OperateLog">
+		<id column="id" property="id" />
+		<result column="userid" property="userid" />
+        <result column="uuid" property="uuid" />
+		<result column="msg" property="msg" />
+		<result column="type" property="type" />
+		<result column="terrace" property="terrace" />
+		<result column="createtime" property="createtime" />
+	</resultMap>
+  <select id="selectOperateLogPage" resultType="map">
+        SELECT 
+        t.id, t.userid,t.uuid, t.msg,
+        t.type, t.terrace,
+        t.createtime,u.name username
+        FROM operate_log t
+        LEFT JOIN user u ON t.userid = u.id WHERE 1=1 
+	        <if test=" terrace != null and terrace  != '' and terrace =='pc' or terrace =='PC'">
+               and  t.terrace = 0  
+            </if>
+	        <if test=" terrace != null and terrace  != '' and terrace =='移动' ">
+               and  t.terrace = 1  
+            </if>
+             <if test=" terrace != null and terrace  != '' and terrace =='tv' or terrace =='TV'">
+                and t.terrace = 2  
+            </if>
+            <if test=" userName != null and userName != '' ">
+               and u.name LIKE CONCAT('%', #{userName}, '%')  
+            </if>
+              <if test=" msg != null and msg != '' ">
+               and t.msg LIKE CONCAT('%', #{msg}, '%')  
+            </if>
+           
+            <if test=" recvDateStart != null ">
+                <![CDATA[ and t.createtime >= #{recvDateStart} ]]>
+            </if>
+            <if test=" recvDateEnd != null ">
+                <![CDATA[ and t.createtime <= #{recvDateEnd} ]]>
+            </if>
+            order by createtime desc
+    </select>
+</mapper>

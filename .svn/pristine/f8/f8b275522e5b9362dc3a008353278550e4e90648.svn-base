@@ -1,0 +1,16 @@
+package com.wangzhixuan.service;
+
+import com.wangzhixuan.model.MapMark;
+import com.baomidou.mybatisplus.service.IService;
+
+/**
+ * <p>
+ * 地图标记 服务类
+ * </p>
+ *
+ * @author sunbq
+ * @since 2017-06-12
+ */
+public interface IMapMarkService extends IService<MapMark> {
+	
+}

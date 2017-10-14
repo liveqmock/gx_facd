@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.wangzhixuan.mapper.SubjectMapper">
+
+	<!-- 通用查询映射结果 -->
+	<resultMap id="BaseResultMap" type="com.wangzhixuan.model.Subject">
+		<id column="id" property="id" />
+		<result column="title" property="title" />
+		<result column="createUser" property="createUser" />
+		<result column="createTime" property="createTime" />
+		<result column="level" property="level" />
+		<result column="status" property="status" />
+	</resultMap>
+
+
+<insert id="insertAndGetId" useGeneratedKeys="true" keyProperty="id" parameterType="com.wangzhixuan.model.Subject">  
+    insert into subject(title,createUser,createTime,level,status)  
+    values(#{title},#{createUser},#{createTime},#{level},#{status})  
+</insert> 
+
+ <select id="selectSubjectPage" resultType="Map">
+		      select 
+		       s.id AS id,s.title AS title,s.createTime AS createTime,s.level AS level,s.status AS status,
+		      u.name AS name
+		      from subject s ,user u 
+		      where  s.createUser =u.id 
+            <if test=" createUser != null and createUser != '' ">
+               and u.name LIKE CONCAT('%', #{createUser}, '%')  
+            </if>
+            <if test=" recvDateStart != null ">
+                <![CDATA[ and s.createTime >= #{recvDateStart} ]]>
+            </if>
+            <if test=" recvDateEnd != null ">
+                <![CDATA[ and s.createTime <= #{recvDateEnd} ]]>
+            </if>
+            <if test=" level != null and level != '' ">
+                AND s.level =  #{level} 
+            </if>
+            <if test=" title != null and title != '' ">
+                AND s.title LIKE CONCAT('%', #{title}, '%')  
+            </if>
+    </select>
+
+	<select id="selectByRandom" resultType="Map">
+		SELECT *
+		FROM subject s  WHERE id >=
+		((SELECT MAX(id) FROM subject)-(SELECT MIN(id) FROM subject)) * RAND() + (SELECT MIN(id) FROM subject)  LIMIT #{num}
+	</select>
+
+
+</mapper>

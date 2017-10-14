@@ -1,0 +1,411 @@
+package com.wangzhixuan.controller;
+
+import java.io.UnsupportedEncodingException;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import javax.validation.Valid;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Controller;
+import org.springframework.ui.Model;
+import org.springframework.validation.BindingResult;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.ResponseBody;
+
+import com.baomidou.mybatisplus.mapper.EntityWrapper;
+import com.wangzhixuan.commons.base.BaseController;
+import com.wangzhixuan.commons.result.PageInfo;
+import com.wangzhixuan.model.Answer;
+import com.wangzhixuan.model.Examination;
+import com.wangzhixuan.model.Subject;
+import com.wangzhixuan.model.TestPaper;
+import com.wangzhixuan.service.IAnswerService;
+import com.wangzhixuan.service.IExaminationService;
+import com.wangzhixuan.service.ISubjectService;
+import com.wangzhixuan.service.ITestPaperService;
+
+import net.sf.json.JSONArray;
+import net.sf.json.JSONObject;
+
+/**
+ * <p>
+ * 考试信息  前端控制器
+ * </p>
+ * @author sunbq
+ * @since 2017-08-22
+ */
+@Controller
+@RequestMapping("/examination")
+public class ExaminationController extends BaseController {
+	
+	@Autowired private IExaminationService examinationService;
+	
+	@Autowired private ISubjectService subjectService;
+	
+	@Autowired
+	private IAnswerService answerService;
+	
+	@Autowired
+	private ITestPaperService testPaperService ;
+	
+	@GetMapping("/manager")
+	public String manager() {
+		return "admin/examination/examinationList";
+	}
+
+
+	@PostMapping("/dataGrid")
+	@ResponseBody
+	public PageInfo dataGrid(Integer page, Integer rows, String sort,String order,HttpServletRequest req) {
+		PageInfo pageInfo = new PageInfo(page, rows, sort, order);
+		String type = req.getParameter("type");
+		String title = req.getParameter("title");
+		String createUser = req.getParameter("createUser");
+		String recvDateStart = req.getParameter("recvDateStart");
+		String recvDateEnd = req.getParameter("recvDateEnd");
+		
+		SimpleDateFormat sdf =   new SimpleDateFormat( "yyyy-MM-dd HH:mm:ss" );
+		
+		
+        Map<String, Object> condition = new HashMap<String, Object>();
+
+        //发送者的姓名
+        if (null != type && !type.equals("")) {
+            condition.put("type", Integer.parseInt(type));
+        }
+        if (null != title && !title.equals("")) {	//标题
+            condition.put("title", title);
+        }
+        //开始时间
+        if (null != recvDateStart && !recvDateStart.equals("")) {
+            try {
+				condition.put("recvDateStart", sdf.parseObject(recvDateStart));
+			} catch (ParseException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+        }
+        //结束时间
+        if (null != recvDateEnd && !recvDateEnd.equals("")) {
+            try {
+				condition.put("recvDateEnd", sdf.parseObject(recvDateEnd));
+			} catch (ParseException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+        }
+      
+        if (null != createUser && !createUser.equals("") ){
+        	condition.put("createUser", createUser);
+        }
+      
+        pageInfo.setCondition(condition);
+        examinationService.selectDataGrid(pageInfo);
+        
+		return pageInfo;
+	}
+	
+	/**
+	 * 添加页面
+	 * @return
+	 */
+	@GetMapping("/addPage")
+	public String addPage() {
+		return "admin/examination/examinationAdd";
+	}
+
+	/**
+	 * 添加
+	 * @param 
+	 * @return
+	 */
+	@RequestMapping("/add")
+	@ResponseBody
+	public Object add(HttpServletRequest req,HttpServletResponse response) {
+		response.setCharacterEncoding("UTF-8");    //response.setContentType("text/html;charset=UTF-8");
+		String title =null;
+		try {
+			title =java.net.URLDecoder.decode((String)req.getParameter("titl"),"UTF-8");
+		} catch (UnsupportedEncodingException e1) {
+			// TODO Auto-generated catch block
+			e1.printStackTrace();
+		}
+		Examination examination = new Examination();
+		String ids = req.getParameter("ids");
+//		String title = req.getParameter("title");
+		String beginTime = req.getParameter("beginTime");
+		String endTime = req.getParameter("endTime");
+		String type = req.getParameter("type");
+		
+		SimpleDateFormat sdf =   new SimpleDateFormat( "yyyy-MM-dd HH:mm:ss" );
+		
+		long i = this.getUserId();
+		int j = (int)i;
+		examination.setCreateTime(new Date());
+		examination.setCreateUser(j);
+		examination.setTitle(title);
+		examination.setType(Integer.parseInt(type));
+		try {
+			examination.setBeginTime(sdf.parse(beginTime.toString()));
+			examination.setEndTime(sdf.parse(endTime.toString()));
+	} catch (ParseException e) {
+			// TODO Auto-generated catch block
+		e.printStackTrace();
+		}
+		
+		boolean b = examinationService.insertExamination(examination,ids);
+		if (b) {
+			return renderSuccess("添加成功！");
+		} else {
+			return renderError("添加失败！");
+		}
+	}
+	
+	@RequestMapping("/addTestpaper")
+	@ResponseBody
+	public Object addTestpaper(String ids,String id) {
+	
+		try{
+			String[] a = ids.split(",");
+		    for(int i=0;i<a.length;i++){
+		    	EntityWrapper<TestPaper> ew = new EntityWrapper<TestPaper>();
+		    	ew.eq("subject_id", Integer.parseInt(a[i]));
+		     TestPaper test=	testPaperService.selectOne(ew);
+		     if(test!=null&&test.equals("")){
+		    	 TestPaper tp = new TestPaper();
+		    	 tp.setExaminationId(Integer.parseInt(id));
+		    	 tp.setSubjectId(Integer.parseInt(a[i]));
+		     }
+	     	}
+		    return renderSuccess("添加成功！");
+		}catch(Exception e){
+			e.printStackTrace();
+			return renderError("添加失败！");
+		}
+		
+		
+		
+	}
+
+	/**
+	 * 删除
+	 * @param id
+	 * @return
+	 */
+	@PostMapping("/delete")
+	@ResponseBody
+	public Object delete(int id) {
+		boolean b = examinationService.deleteById(id);
+		EntityWrapper<TestPaper> ew = new EntityWrapper<TestPaper>();
+		ew.eq("examination_id", id);
+		 testPaperService.delete(ew);
+		if (b) {
+			return renderSuccess("删除成功！");
+		} else {
+			return renderError("删除失败！");
+		}
+	}
+	
+	@PostMapping("/deleteMore")
+	@ResponseBody
+	public Object deleteMore(String ids) {
+		try{
+			String[] a = ids.split(",");
+		      for(int i=0;i<a.length;i++){
+		    	  EntityWrapper<TestPaper> ew = new EntityWrapper<TestPaper>();
+		    	  ew.eq("subject_id", Integer.parseInt(a[i]));
+		    	  if(Integer.parseInt(a[i])!=0){
+		    		  testPaperService.delete(ew);
+		    	  }
+		      }
+		      return renderSuccess("删除成功！");
+		}catch(Exception e){
+			e.printStackTrace();
+			return renderError("删除失败！");
+		}
+	      
+		
+	}
+
+	/**
+	 * 编辑
+	 * @param model
+	 * @param id
+	 * @return
+	 */
+	@GetMapping("/editPage")
+	public String editPage(Model model, int id) {
+		Examination examination = examinationService.selectById(id);
+		model.addAttribute("examination", examination);
+		return "admin/examination/examinationEdit";
+	}
+
+	/**
+	 * 编辑
+	 * @param 
+	 * @return
+	 */
+	@PostMapping("/edit")
+	@ResponseBody
+	public Object edit(@Valid Examination examination, BindingResult result,String da,String ids) {
+		if (result.hasErrors()) {
+			return renderError(result);
+		}
+		boolean b = examinationService.updateById(examination);
+		if (b) {
+			return renderSuccess("编辑成功！");
+		} else {
+			return renderError("编辑失败！");
+		}
+	}
+	
+	
+	@PostMapping("/selectRandom")
+	@ResponseBody
+	public Object selectRandom(@Valid Examination examination, BindingResult result,HttpServletRequest req) {
+		if (result.hasErrors()) {
+			return renderError(result);
+		}
+		String num= req.getParameter("num");
+		 Map<String, Object> condition = new HashMap<String, Object>();
+		 condition.put("num", Integer.parseInt(num));
+			List<Subject> subjects = subjectService.selectByRandom(condition);
+			JSONArray arr = new JSONArray();
+			for(int i=0;i<subjects.size();i++){
+				JSONObject json = new JSONObject();
+				Subject subject = subjects.get(i);
+				int subjectsid =subject.getId();
+				json.put("id",subjectsid);
+				json.put("title",subject.getTitle());
+				String level =null;
+				 switch (subject.getLevel()) {
+                 case 1:
+                	 level = "简单";
+               	  break;
+                 case 2:
+                	 level = "一般";
+                     break;
+                 case 3:
+                	 level = "困难";
+               	  break;
+             }
+				json.put("level",level);
+				EntityWrapper<Answer> wrapper = new EntityWrapper<Answer>();
+				wrapper.eq("subject_id", subjectsid);
+				List<Answer> answers= answerService.selectList(wrapper);
+				json.put("answer",answers);
+				arr.add(json);
+			}
+			return renderSuccess(arr);
+
+		}
+	 
+	@PostMapping("/selectPage")
+	@ResponseBody
+	public Object selectPage(@Valid Examination examination, BindingResult result,HttpServletRequest req,String page) {
+		if (result.hasErrors()) {
+			return renderError(result);
+		}
+		String pager = req.getParameter("page");
+		int num1 =0;
+		EntityWrapper<Subject> wrapper = new EntityWrapper<Subject>();
+		int tota = subjectService.selectCount(wrapper);
+		if(pager.equals("max")){
+			num1 = tota;
+		}
+		int	pages=0;
+		try{
+			pages = Integer.parseInt(page);
+		}catch(Exception e){
+			pages =1;
+		}
+		num1 = (pages-1)*20;
+		int num2 = pages*20;
+		
+		if(num1>tota){
+			num1 = tota;
+		}
+		 Map<String, Object> condition = new HashMap<String, Object>();
+		 condition.put("num1", num1);
+		 condition.put("num2", num2);
+			List<Subject> subjects = subjectService.selectPage(condition);
+			JSONArray arr = new JSONArray();
+			for(int i=0;i<subjects.size();i++){
+				JSONObject json = new JSONObject();
+				Subject subject = subjects.get(i);
+				int subjectsid =subject.getId();
+				json.put("id",subjectsid);
+				json.put("title",subject.getTitle());
+				String level =null;
+				 switch (subject.getLevel()) {
+                 case 1:
+                	 level = "简单";
+               	  break;
+                 case 2:
+                	 level = "一般";
+                     break;
+                 case 3:
+                	 level = "困难";
+               	  break;
+             }
+				json.put("level",level);
+				EntityWrapper<Answer> wrappe = new EntityWrapper<Answer>();
+				wrappe.eq("subject_id", subjectsid);
+				List<Answer> answers= answerService.selectList(wrappe);
+				json.put("answer",answers);
+				arr.add(json);
+			}
+			return renderSuccess(arr);
+
+		}
+	
+	@PostMapping("/selectEdit")
+	@ResponseBody
+	public Object selectEdit(@Valid Examination examination, BindingResult result,HttpServletRequest req,String id) {
+		if (result.hasErrors()) {
+			return renderError(result);
+		}
+	       EntityWrapper<TestPaper>	ew = new EntityWrapper<TestPaper>();
+		       ew.eq("examination_id", Integer.parseInt(id));
+		      List<TestPaper> list =  testPaperService.selectList(ew);
+			JSONArray arr = new JSONArray();
+			for(int i=0;i<list.size();i++){
+				JSONObject json = new JSONObject();
+				TestPaper test = list.get(i);
+				int subjectsid =test.getSubjectId();
+				
+				Subject subject =  subjectService.selectById(subjectsid);
+				json.put("id",subjectsid);
+				json.put("title",subject.getTitle());
+				String level =null;
+				 switch (subject.getLevel()) {
+                 case 1:
+                	 level = "简单";
+               	  break;
+                 case 2:
+                	 level = "一般";
+                     break;
+                 case 3:
+                	 level = "困难";
+               	  break;
+             }
+				json.put("level",level);
+				EntityWrapper<Answer> wrappe = new EntityWrapper<Answer>();
+				wrappe.eq("subject_id", subjectsid);
+				List<Answer> answers= answerService.selectList(wrappe);
+				json.put("answer",answers);
+				arr.add(json);
+			}
+			return renderSuccess(arr);
+
+		}
+}

@@ -1,0 +1,19 @@
+package com.wangzhixuan.service;
+
+import com.wangzhixuan.model.Subject;
+import com.baomidou.mybatisplus.service.IService;
+
+import java.util.List;
+import java.util.Map;
+
+/**
+ * <p>
+ * 题库表 服务类
+ * </p>
+ *
+ * @author sunbq
+ * @since 2017-08-22
+ */
+public interface ISubjectService extends IService<Subject> {
+    List<Subject> selectByRandom(Map<String, Object> params);
+}

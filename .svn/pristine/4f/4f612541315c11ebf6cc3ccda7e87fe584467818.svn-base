@@ -1,0 +1,75 @@
+package com.wangzhixuan.service.impl;
+
+import com.wangzhixuan.model.DataDictionary;
+import com.wangzhixuan.model.DataType;
+import com.wangzhixuan.mapper.DataDictionaryMapper;
+import com.wangzhixuan.mapper.DataTypeMapper;
+import com.wangzhixuan.service.IDataDictionaryService;
+
+import net.sf.json.JSONArray;
+import net.sf.json.JSONObject;
+
+import com.baomidou.mybatisplus.mapper.EntityWrapper;
+import com.baomidou.mybatisplus.service.impl.ServiceImpl;
+import com.fasterxml.jackson.databind.jsonFormatVisitors.JsonAnyFormatVisitor;
+import com.mysql.fabric.xmlrpc.base.Array;
+
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+
+/**
+ * <p>
+ *  服务实现类
+ * </p>
+ *
+ * @author sunbq
+ * @since 2017-09-12
+ */
+@Service
+public class DataDictionaryServiceImpl extends ServiceImpl<DataDictionaryMapper, DataDictionary> implements IDataDictionaryService {
+    
+	@Autowired
+	private DataTypeMapper dataTypeMapper;
+	
+	@Autowired
+	private DataDictionaryMapper dataDictionaryMapper;
+	
+	
+	@Override
+	public Object getType() {
+		EntityWrapper<DataType> ew=new EntityWrapper<DataType>();
+		List<DataType> list = dataTypeMapper.selectList(ew);
+		JSONArray jsonArray = new JSONArray();
+		List<List<DataDictionary>> list2 = new ArrayList<List<DataDictionary>>();
+		for(int i=0; i<list.size(); i++) {
+			JSONObject jsonDataType = new JSONObject();
+			jsonDataType.put("id", list.get(i).getType());
+			jsonDataType.put("name", list.get(i).getDataType());
+			jsonDataType.put("pid", "null");
+			jsonArray.add(jsonDataType);
+			EntityWrapper<DataDictionary> wrapper = new EntityWrapper<DataDictionary>();
+			if(list.get(i).getType()!=null) {
+				wrapper.eq("flag", list.get(i).getType());
+			}
+			List<DataDictionary> dataList = dataDictionaryMapper.selectList(wrapper);
+			list2.add(dataList);
+		}
+		JSONObject jsonDataDataDictionary = new JSONObject();
+		for(int j=0;j<list2.size();j++) {
+			List<DataDictionary> myList = (List<DataDictionary>) list2.get(j);
+			for(int k=0;k<myList.size();k++ ) {
+				jsonDataDataDictionary.put("id", myList.get(k).getType());
+				jsonDataDataDictionary.put("name", myList.get(k).getName());
+				jsonDataDataDictionary.put("pid", myList.get(k).getFlag());
+				jsonArray.add(jsonDataDataDictionary);
+			}
+		}
+		return jsonArray;
+	}
+	
+}

@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.wangzhixuan.mapper.SubjectCollectionMapper">
+
+	<!-- 通用查询映射结果 -->
+	<resultMap id="BaseResultMap" type="com.wangzhixuan.model.SubjectCollection">
+		<id column="id" property="id" />
+		<result column="userId" property="userId" />
+		<result column="subject_id" property="subjectId" />
+		<result column="createTime" property="createTime" />
+	</resultMap>
+
+	<select id="selectFavoriteByUserid" resultType="Map">
+		SELECT s.id,s.title,s.`level`,sc.id as sc_id from `subject` s,subject_collection sc where s.id = sc.subject_id and sc.userId = #{userid}
+	</select>
+
+</mapper>

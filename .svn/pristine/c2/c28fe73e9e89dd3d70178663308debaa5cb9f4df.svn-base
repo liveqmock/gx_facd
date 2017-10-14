@@ -1,0 +1,215 @@
+package com.wangzhixuan.controller.phone;
+
+import com.baomidou.mybatisplus.mapper.EntityWrapper;
+import com.baomidou.mybatisplus.plugins.Page;
+import com.wangzhixuan.commons.base.BaseController;
+import com.wangzhixuan.commons.result.PageInfo;
+import com.wangzhixuan.commons.utils.*;
+import com.wangzhixuan.model.*;
+import com.wangzhixuan.service.*;
+import net.sf.json.JSONArray;
+import net.sf.json.JSONObject;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Controller;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.ResponseBody;
+
+
+import javax.servlet.http.HttpServletRequest;
+import java.text.SimpleDateFormat;
+import java.util.*;
+
+@Controller
+@RequestMapping("/phoneExamination")
+public class PhoneExaminationController extends BaseController {
+
+
+	@Autowired
+	private IUserService usrService;
+	@Autowired
+	private ISubjectService subjectService;
+	@Autowired
+	private IAnswerService answerService;
+	@Autowired
+	private ISubjectCollectionService scService;
+	@Autowired
+	private IExaminationService examinationService;
+	@Autowired
+	private IAnswerService aservice;
+
+
+	/**
+	 * 随机获取练习列表
+	 *
+	 * @param req
+	 * @param
+	 * @param token
+	 * @return
+	 */
+	@RequestMapping("/randomList")
+	@ResponseBody
+	public Object sendlist(HttpServletRequest req, String token) {
+		
+		try {
+			Map<String, Object> map  = new HashMap<String, Object>();
+			map.put("num",3);
+			List<Subject> subjects = subjectService.selectByRandom(map);
+			JSONArray arr = new JSONArray();
+			for(int i=0;i<subjects.size();i++){
+				JSONObject json = new JSONObject();
+				Subject subject = subjects.get(i);
+				int subjectsid =subject.getId();
+				json.put("id",subjectsid);
+				json.put("title",subject.getTitle());
+				json.put("level",subject.getLevel());
+				EntityWrapper<Answer> wrapper = new EntityWrapper<Answer>();
+				wrapper.eq("subject_id", subjectsid);
+				List<Answer> answers= answerService.selectList(wrapper);
+				json.put("answer",answers);
+				arr.add(json);
+			}
+			return renderSuccess(arr);
+
+		} catch (Exception e) {
+			e.printStackTrace();
+			//this.ErrorLog(e, 1, user.getId());
+			return renderError("系统异常");
+		}
+	}
+
+	/**
+	 * 收藏试题
+	 *
+	 * @param req
+	 * @param id
+	 * @param token
+	 * @return
+	 */
+	@RequestMapping("/addFavorite")
+	@ResponseBody
+	public Object addFavorite(HttpServletRequest req,Integer id, String token) {
+		User user = usrService.selectBytoken(token);
+		if (user == null) {
+			return renderError("用户登录已过期!");
+		}
+		try {
+			SubjectCollection sc = new SubjectCollection();
+			sc.setUserId(user.getId().intValue());
+			sc.setSubjectId(id);
+			sc.setCreateTime(new Date());
+			boolean result = scService.insert(sc);
+			if(result){
+				return renderSuccess(sc);
+			}else{
+				return renderError("收藏失败");
+			}
+		} catch (Exception e) {
+			e.printStackTrace();
+			//this.ErrorLog(e, 1, user.getId());
+			return renderError("系统异常");
+		}
+	}
+
+	/**
+	 * 取消收藏试题
+	 *
+	 * @param req
+	 * @param id
+	 * @param token
+	 * @return
+	 */
+	@RequestMapping("/delFavorite")
+	@ResponseBody
+	public Object delFavorite(HttpServletRequest req,Integer id, String token) {
+		User user = usrService.selectBytoken(token);
+		if (user == null) {
+			return renderError("用户登录已过期!");
+		}
+		try {
+			Map<String, Object> map  = new HashMap<String, Object>();
+			map.put("userid", user.getId());
+			map.put("subject_id", id);
+			boolean result = scService.deleteByMap(map);
+			if(result){
+				return renderSuccess("删除成功");
+			}else{
+				return renderError("删除失败");
+			}
+		} catch (Exception e) {
+			e.printStackTrace();
+			//this.ErrorLog(e, 1, user.getId());
+			return renderError("系统异常");
+		}
+	}
+
+	/**
+	 * 获取收藏试题列表
+	 *
+	 * @param req
+	 * @param
+	 * @param token
+	 * @return
+	 */
+	@RequestMapping("/getFavoriteList")
+	@ResponseBody
+	public Object getFavoriteList(HttpServletRequest req, String token,Integer pageLimit,Integer pageIndex) {
+		//User user = usrService.selectBytoken(token);
+			EntityWrapper<SubjectCollection> ew = new EntityWrapper<SubjectCollection>();
+			PageInfo pageInfo = new PageInfo(pageIndex,pageLimit,"createTime", "desc");
+			Page<SubjectCollection> pages=new Page<SubjectCollection>(pageInfo.getNowpage(), pageInfo.getSize());
+			pages=scService.selectPage(pages,ew);
+			JSONArray arr = new JSONArray();	
+			for(SubjectCollection list:pages.getRecords()){
+				EntityWrapper<Subject> es = new EntityWrapper<Subject>();
+				es.setSqlSelect("id,title,createTime");
+				es.eq("id",list.getSubjectId());
+				Map<String, Object> maps =subjectService.selectMap(es);
+				EntityWrapper<Answer> ee = new EntityWrapper<Answer>();
+				ee.setSqlSelect("answerContent");
+				ee.eq("subject_id",list.getSubjectId());
+				List<Map<String, Object>> selectMaps = aservice.selectMaps(ee);
+				maps.put("answer",selectMaps);
+				arr.add(maps);
+			}
+			return renderSuccess(arr);
+	}
+
+	/**
+	 * 获取考试信息列表
+	 *
+	 * @param req
+	 * @param
+	 * @param token
+	 * @return
+	 */
+	@RequestMapping("/getExaminationList")
+	@ResponseBody
+	public Object getExaminationList(HttpServletRequest req, String token) {
+		User user = usrService.selectBytoken(token);
+		if (user == null) {
+			return renderError("用户登录已过期!");
+		}
+		try {
+			Map<String, Object> map  = new HashMap<String, Object>();
+			List<Examination> examinations =  examinationService.selectByMap(map);
+			JSONArray arr = new JSONArray();
+			for(int i=0;i<examinations.size();i++){
+				JSONObject json = new JSONObject();
+				Examination examination = examinations.get(i);
+				json.put("id",examination.getId()+"");
+				json.put("title",examination.getTitle());
+				json.put("info",examination.getInfo());
+				json.put("begintime",new SimpleDateFormat("yyyy-MM-dd HH:mm").format(examination.getBeginTime()));
+				json.put("endtime",new SimpleDateFormat("yyyy-MM-dd HH:mm").format(examination.getEndTime()));
+				arr.add(json);
+			}
+			//JSONArray jsonArray = JSONArray.fromObject(examinations);
+			return renderSuccess(arr);
+
+		} catch (Exception e) {
+			e.printStackTrace();
+			//this.ErrorLog(e, 1, user.getId());
+			return renderError("系统异常");
+		}
+	}
+}

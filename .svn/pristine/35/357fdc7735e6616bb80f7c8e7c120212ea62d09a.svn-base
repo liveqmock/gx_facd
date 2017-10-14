@@ -1,0 +1,30 @@
+package com.wangzhixuan.mapper;
+
+import java.util.List;
+import java.util.Map;
+
+import com.baomidou.mybatisplus.mapper.BaseMapper;
+import com.baomidou.mybatisplus.plugins.pagination.Pagination;
+import com.wangzhixuan.model.SendInfo;
+
+/**
+ * <p>
+  * 报送信息 Mapper 接口
+ * </p>
+ *
+ * @author sunbq
+ * @since 2017-05-23
+ */
+public interface SendInfoMapper extends BaseMapper<SendInfo> {
+	
+	List<Map<String, Object>> selectSendInfoPage(Pagination page, Map<String, Object> params);
+	
+	List<SendInfo> selectExcle(Map<String, Object> params);
+
+	List<Map<String, Object>> selectReportList(Map<String,Object> params);
+	
+	List<Map<String, Object>> selectReportList2(Map<String,Object> params);
+	
+	int  selectReportList2Count(Map<String,Object> params);
+	
+}

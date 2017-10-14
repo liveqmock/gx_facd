@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.wangzhixuan.mapper.ScoreMapper">
+
+	<!-- 通用查询映射结果 -->
+	<resultMap id="BaseResultMap" type="com.wangzhixuan.model.Score">
+		<id column="id" property="id" />
+		<result column="userId" property="userId" />
+		<result column="examination_id" property="examinationId" />
+		<result column="score" property="score" />
+	</resultMap>
+
+ <select id="selectScorePage" resultType="Map">
+		     select 
+		       title, id
+		      from examination where 1=1
+          
+            <if test=" recvDateStart != null ">
+                <![CDATA[ and e.createTime >= #{recvDateStart} ]]>
+            </if>
+            <if test=" recvDateEnd != null ">
+                <![CDATA[ and e.createTime <= #{recvDateEnd} ]]>
+            </if>
+            <if test=" type != null and type != '' ">
+                AND e.type =  #{type} 
+            </if>
+            <if test=" title != null and title != '' ">
+                AND title LIKE CONCAT('%', #{title}, '%')  
+            </if>
+    </select>
+    
+ 
+</mapper>

@@ -1,0 +1,145 @@
+<%@ page language="java" contentType="text/html; charset=UTF-8" pageEncoding="UTF-8"%>
+<%@ include file="/commons/global.jsp" %>
+<script type="text/javascript">
+    var sysConfigDataGrid;
+    $(function() {
+        sysConfigDataGrid = $('#sysConfigDataGrid').datagrid({
+        url : '${path}/sysConfig/dataGrid',
+        striped : true,
+        rownumbers : true,
+        pagination : true,
+        singleSelect : true,
+        idField : 'id',
+        sortName : 'id',
+        sortOrder : 'asc',
+        pageSize : 20,
+        pageList : [ 10, 20, 30, 40, 50, 100, 200, 300, 400, 500],
+        frozenColumns : [ [ {
+            width : '5%',
+            title : '编号',
+            field : 'id',
+            sortable : true
+        }, {
+            width : '25%',
+            title : '标记值',
+            field : 'selkey',
+            sortable : true
+            
+        }, {
+            width : '30%',
+            title : '设定',
+            field : 'value',
+            sortable : true
+        }, {
+            width : '25%',
+            title : '描述',
+            field : 'info',
+            sortable : true
+        }, {
+            field : 'action',
+            title : '操作',
+            width : '10%',
+            formatter : function(value, row, index) {
+                var str = '';
+                    str += $.formatString('<a href="javascript:void(0)" class="sysConfig-easyui-linkbutton-edit" data-options="plain:true,iconCls:\'fi-pencil icon-blue\'" onclick="sysConfigEditFun(\'{0}\');" >编辑</a>', row.id);
+                return str;
+            }
+        } ] ],
+        onLoadSuccess:function(data){
+            $('.sysConfig-easyui-linkbutton-edit').linkbutton({text:'编辑'});
+        },
+        toolbar : '#sysConfigToolbar'
+    });
+});
+
+/**
+ * 添加框
+ * @param url
+ */
+function sysConfigAddFun() {
+    parent.$.modalDialog({
+        title : '添加',
+        width : 700,
+        height : 600,
+        href : '${path}/sysConfig/addPage',
+        buttons : [ {
+            text : '确定',
+            handler : function() {
+                parent.$.modalDialog.openner_dataGrid = sysConfigDataGrid;//因为添加成功之后，需要刷新这个treeGrid，所以先预定义好
+                var f = parent.$.modalDialog.handler.find('#sysConfigAddForm');
+                f.submit();
+            }
+        } ]
+    });
+}
+
+
+/**
+ * 编辑
+ */
+function sysConfigEditFun(id) {
+    if (id == undefined) {
+        var rows = sysConfigDataGrid.datagrid('getSelections');
+        id = rows[0].id;
+    } else {
+        sysConfigDataGrid.datagrid('unselectAll').datagrid('uncheckAll');
+    }
+    parent.$.modalDialog({
+        title : '编辑',
+        width : 700,
+        height : 600,
+        href :  '${path}/sysConfig/editPage?id=' + id,
+        buttons : [ {
+            text : '确定',
+            handler : function() {
+                parent.$.modalDialog.openner_dataGrid = sysConfigDataGrid;//因为添加成功之后，需要刷新这个dataGrid，所以先预定义好
+                var f = parent.$.modalDialog.handler.find('#sysConfigEditForm');
+                f.submit();
+            }
+        } ]
+    });
+}
+
+
+
+
+
+/**
+ * 清除
+ */
+function sysConfigCleanFun() {
+    $('#sysConfigSearchForm input').val('');
+    sysConfigDataGrid.datagrid('load', {});
+}
+/**
+ * 搜索
+ */
+function sysConfigSearchFun() {
+     sysConfigDataGrid.datagrid('load', $.serializeObject($('#sysConfigSearchForm')));
+}
+</script>
+
+<div class="easyui-layout" data-options="fit:true,border:false">
+    <div data-options="region:'north',border:false" style="height: 30px; overflow: hidden;background-color: #fff">
+        <form id="sysConfigSearchForm">
+            <table>
+                <tr>
+                    <th>描述:</th>
+                    <td><input name="info" placeholder="搜索条件"/></td>
+                    <td>
+                        <a href="javascript:void(0);" class="easyui-linkbutton" data-options="iconCls:'fi-magnifying-glass',plain:true" onclick="sysConfigSearchFun();">查询</a>
+                        <a href="javascript:void(0);" class="easyui-linkbutton" data-options="iconCls:'fi-x-circle',plain:true" onclick="sysConfigCleanFun();">清空</a>
+                    </td>
+                </tr>
+            </table>
+        </form>
+     </div>
+ 
+    <div data-options="region:'center',border:false">
+        <table id="sysConfigDataGrid" data-options="fit:true,border:false"></table>
+    </div>
+</div>
+<div id="sysConfigToolbar" style="display: none;">
+ 
+        <a onclick="sysConfigAddFun();" href="javascript:void(0);" class="easyui-linkbutton" data-options="plain:true,iconCls:'fi-page-add'">添加</a>
+</div>

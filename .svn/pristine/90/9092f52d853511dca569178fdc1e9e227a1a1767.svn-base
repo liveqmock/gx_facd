@@ -1,0 +1,126 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.wangzhixuan.mapper.UserMapper">
+
+    <resultMap id="userVoResultMap" type="com.wangzhixuan.model.vo.UserVo">
+        <id column="id" property="id" jdbcType="BIGINT"/>
+        <result column="login_name" property="loginName" jdbcType="VARCHAR"/>
+        <result column="name" property="name" jdbcType="VARCHAR"/>
+        <result column="password" property="password" jdbcType="VARCHAR"/>
+        <result column="sex" property="sex" jdbcType="TINYINT"/>
+        <result column="age" property="age" jdbcType="TINYINT"/>
+        <result column="user_type" property="userType" jdbcType="TINYINT"/>
+        <result column="status" property="status" jdbcType="TINYINT"/>
+        <result column="organization_id" property="organizationId" jdbcType="INTEGER"/>
+        <result column="create_time" property="createTime" jdbcType="TIMESTAMP"/>
+        <result column="phone" property="phone" jdbcType="VARCHAR"/>
+        <result column="icon" property="icon" />
+        <result column="birthday" property="birthday" />
+        <result column="politics" property="politics" />
+        <result column="road" property="road" />
+        <result column="home_adress" property="homeAdress" />
+        <result column="token" property="token" />
+        <result column="devicenum" property="devicenum" />
+        <result column="is_grant" property="isGrant" />
+
+        <result column="organizationName" property="organizationName" jdbcType="VARCHAR"/>
+
+        <collection property="rolesList" ofType="Role">
+            <id column="roleId" property="id"/>
+            <result column="roleName" property="name"/>
+        </collection>
+    </resultMap>
+    <!-- 通用查询映射结果 -->
+	<resultMap id="BaseResultMap" type="com.wangzhixuan.model.User">
+		<id column="id" property="id" />
+		<result column="login_name" property="loginName" />
+		<result column="name" property="name" />
+		<result column="password" property="password" />
+		<result column="salt" property="salt" />
+		<result column="sex" property="sex" />
+		<result column="age" property="age" />
+		<result column="phone" property="phone" />
+		<result column="user_type" property="userType" />
+		<result column="status" property="status" />
+		<result column="organization_id" property="organizationId" />
+		<result column="create_time" property="createTime" />
+		<result column="icon" property="icon" />
+		<result column="birthday" property="birthday" />
+		<result column="politics" property="politics" />
+		<result column="road" property="road" />
+		<result column="home_adress" property="homeAdress" />
+		<result column="token" property="token" />
+		<result column="devicenum" property="devicenum" />
+		<result column="is_grant" property="isGrant" />
+	</resultMap>
+    <!-- 通用查询结果列-->
+<!--     <sql id="Base_Column_List"> -->
+<!--         id, login_name AS loginName,road, name, password, salt, sex, age, phone, user_type AS userType, status, organization_id AS organizationId,politics, create_time AS createTime -->
+<!--     </sql> -->
+
+    <select id="selectUserVoById" resultMap="userVoResultMap" parameterType="java.lang.Long">
+        SELECT
+        t.id,
+        t.login_name,
+        t.`name`,
+        t.`password`,
+        t.sex,
+        t.age,
+        t.user_type,
+        t.`status`,
+        t.organization_id,
+        t.create_time,
+        t.phone,
+        s.`name` AS organizationName,
+        o.id AS roleId,
+        o.`name` AS roleName,
+        t.road,t.politics,
+        r1.name As roadName,
+        t.icon,
+		t.birthday,
+		t.home_adress,
+		t.token,
+		t.devicenum,
+		t.is_grant
+        FROM
+        user t
+        LEFT JOIN user_role r ON t.id = r.user_id
+        LEFT JOIN role o ON r.role_id = o.id
+        LEFT JOIN organization s ON s.id = t.organization_id
+        LEFT JOIN road r1 ON t.road = r1.id
+        <where>
+            t.id = #{id}
+        </where>
+    </select>
+
+    <select id="selectUserPage" resultType="Map" parameterType="java.util.HashMap" >
+        SELECT 
+        t.id, t.login_name AS loginName, t.`name`, t.phone, t.`password`, 
+        t.sex, t.age, t.create_time AS createTime, t.user_type AS userType, 
+        t.`status`, t.organization_id AS organizationId,  
+        s.`name` AS organizationName, group_concat(o.`name`) AS rolesList,
+        r1.name AS roadName,t.icon
+        FROM user t
+        LEFT JOIN user_role r ON t.id = r.user_id
+        LEFT JOIN role o ON r.role_id = o.id
+        LEFT JOIN organization s ON s.id = t.organization_id
+        LEFT JOIN road r1 ON r1.id = t.road
+        where user_type != 4
+            <if test=" uname != null and uname != '' ">
+            <![CDATA[
+              and  t.name  LIKE CONCAT('%', #{uname}, '%') 
+              ]]>
+            </if>
+            <if test=" organizationId != null ">
+             and   t.organization_id = #{organizationId}
+            </if>
+            <if test=" startTime != null ">
+                <![CDATA[ and t.create_time >= #{startTime} ]]>
+            </if>
+            <if test=" endTime != null ">
+                <![CDATA[ and t.create_time <= #{endTime} ]]>
+            </if>
+        GROUP BY t.id
+    </select>
+
+</mapper>

@@ -1,0 +1,16 @@
+package com.wangzhixuan.mapper;
+
+import com.wangzhixuan.model.TopicalInfo;
+import com.baomidou.mybatisplus.mapper.BaseMapper;
+
+/**
+ * <p>
+  * 时事信息表 Mapper 接口
+ * </p>
+ *
+ * @author sunbq
+ * @since 2017-08-22
+ */
+public interface TopicalInfoMapper extends BaseMapper<TopicalInfo> {
+
+}

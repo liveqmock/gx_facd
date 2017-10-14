@@ -1,0 +1,177 @@
+package com.wangzhixuan.controller;
+
+
+import java.util.List;
+
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Controller;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.ResponseBody;
+
+import com.baomidou.mybatisplus.mapper.EntityWrapper;
+import com.wangzhixuan.commons.base.BaseController;
+import com.wangzhixuan.model.DailyPatrol;
+import com.wangzhixuan.model.MapMark;
+import com.wangzhixuan.model.PatrolTrail;
+import com.wangzhixuan.model.Road;
+import com.wangzhixuan.model.RoadTrail;
+import com.wangzhixuan.model.User;
+import com.wangzhixuan.service.IDailyPatrolService;
+import com.wangzhixuan.service.IMapMarkService;
+import com.wangzhixuan.service.IPatrolTrailService;
+import com.wangzhixuan.service.IRoadService;
+import com.wangzhixuan.service.IRoadTrailService;
+import com.wangzhixuan.service.ISysConfigService;
+import com.wangzhixuan.service.IUserService;
+
+import net.sf.json.JSONArray;
+import net.sf.json.JSONObject;
+
+
+/**
+ * <p>
+ * 地图
+ * </p>
+ * @author weijunhe
+ * @since 2017-08-11
+ */
+@Controller
+@RequestMapping("/map")
+public class MapController extends BaseController {
+
+	@Autowired
+	private IUserService usrService;
+
+	@Autowired
+	private IDailyPatrolService dpService;
+
+	@Autowired
+	private IRoadService rodService;
+
+	@Autowired
+	private IPatrolTrailService ptrailService;
+
+	@Autowired
+	private IRoadTrailService rtailService;
+
+	@Autowired
+	private IMapMarkService mmService;
+
+	@Autowired
+	private ISysConfigService configService;
+
+	@GetMapping("/index")
+	public String manager() {
+		return "admin/map/index";
+	}
+
+	/**
+	 * 实时巡防的大图展示
+	 *
+	 * @param
+	 * @return
+	 */
+	@RequestMapping("/watchman")
+	@ResponseBody
+	public Object watchman(HttpServletRequest req,HttpServletResponse res, String token) {
+		// 查询在巡防人信息 包括(用户信息，定位信息，巡防信息)
+		JSONArray arr = new JSONArray();
+		try {
+			EntityWrapper<DailyPatrol> ewu = new EntityWrapper<DailyPatrol>();
+			ewu.addFilter("end_time is null");
+			List<DailyPatrol> dps = dpService.selectList(ewu);
+			String url = req.getRequestURL().toString().split(req.getContextPath())[0];
+			for (DailyPatrol dp : dps) {
+				User uin = usrService.selectByUUid(dp.getPatrolId());
+				Road rod = rodService.selectByUUid(uin.getRoad());
+				PatrolTrail ptrail = ptrailService.selectnew(dp.getUuid());
+				JSONObject j = new JSONObject();
+				j.put("uid", uin.getUuid());
+				j.put("icon", url+uin.getIcon());
+				j.put("name", uin.getName());
+				j.put("roadname", rod.getName());
+				j.put("totaldistance", rod.getDistance());
+				j.put("reportcount", dp.getReportcount());
+				j.put("longitude", ptrail.getLongitude());
+				j.put("latitude", ptrail.getLatitude());
+				j.put("patrolid", dp.getId());
+				j.put("patroldistance", dp.getPatrolDistance());
+				EntityWrapper<RoadTrail> ewr = new EntityWrapper<RoadTrail>();
+				ewr.eq("rid", rod.getUuid());
+				ewr.orderBy("id", true);
+				List<RoadTrail> rlist = rtailService.selectList(ewr);
+				JSONArray ar = new JSONArray();
+				for (RoadTrail rt : rlist) {
+					JSONObject aj = new JSONObject();
+					aj.put("longitude", rt.getLongitude());
+					aj.put("latitude", rt.getLatitude());
+					ar.add(aj);
+				}
+				j.put("roadinfo", ar);
+				EntityWrapper<PatrolTrail> ewp = new EntityWrapper<PatrolTrail>();
+				ewp.eq("pid", dp.getUuid());
+				ewp.orderBy("create_time", true);
+				List<PatrolTrail> ptail = ptrailService.selectList(ewp);
+				JSONArray ar1 = new JSONArray();
+				for (PatrolTrail rt : ptail) {
+					JSONObject aj = new JSONObject();
+					aj.put("longitude", rt.getLongitude());
+					aj.put("latitude", rt.getLatitude());
+					ar1.add(aj);
+				}
+				j.put("patrolinfo", ar1);
+				arr.add(j);
+			}
+			return renderSuccess(arr);
+		} catch (Exception e) {
+			e.printStackTrace();
+			return renderError("获取巡防数据异常");
+
+		}
+	}
+
+
+	/**
+	 * 获取地图的标记信息
+	 *
+	 * @param req
+	 * @return
+	 */
+	@RequestMapping("/mapmark")
+	@ResponseBody
+	public Object mapmark(HttpServletRequest req,HttpServletResponse res) {
+		try {
+			EntityWrapper<MapMark> ew = new EntityWrapper<>();
+			ew.eq("type", 0);
+			List<MapMark> mms = mmService.selectList(ew);
+			return renderSuccess(mms);
+		} catch (Exception e) {
+			e.printStackTrace();
+			return renderError("获取界碑数据异常");
+		}
+	}
+	/**
+	 * 查询系统配置信息
+	 * @param req
+	 * @return
+	 */
+	@RequestMapping("/QueryConfig")
+	@ResponseBody
+	public Object QueryConfig(HttpServletRequest req,HttpServletResponse res) {
+		String selKey = req.getParameter("selKey");
+		JSONObject json = new JSONObject();
+		try {
+			String  s = configService.selectConfig(selKey);
+			json.put("value", s);
+			return renderSuccess(json);
+		} catch (Exception e) {
+			e.printStackTrace();
+			return renderError("获取配置数据异常");
+		}
+	}
+
+}

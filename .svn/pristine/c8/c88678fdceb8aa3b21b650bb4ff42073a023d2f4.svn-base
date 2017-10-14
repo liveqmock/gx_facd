@@ -1,0 +1,173 @@
+package com.wangzhixuan.controller.phone;
+
+import com.baomidou.mybatisplus.mapper.EntityWrapper;
+import com.baomidou.mybatisplus.plugins.Page;
+import com.wangzhixuan.commons.base.BaseController;
+import com.wangzhixuan.commons.result.PageInfo;
+import com.wangzhixuan.commons.utils.*;
+import com.wangzhixuan.model.*;
+import com.wangzhixuan.service.*;
+import net.sf.json.JSONArray;
+import net.sf.json.JSONObject;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Controller;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.ResponseBody;
+
+
+import javax.servlet.http.HttpServletRequest;
+import java.util.*;
+
+@Controller
+@RequestMapping("/phoneExamination")
+public class PhoneExaminationController extends BaseController {
+
+
+	@Autowired
+	private IUserService usrService;
+	@Autowired
+	private ISubjectService subjectService;
+	@Autowired
+	private IAnswerService answerService;
+	@Autowired
+	private ISubjectCollectionService scService;
+
+
+	/**
+	 * 随机获取练习列表
+	 *
+	 * @param req
+	 * @param
+	 * @param token
+	 * @return
+	 */
+	@RequestMapping("/randomList")
+	@ResponseBody
+	public Object sendlist(HttpServletRequest req, String token) {
+		User user = usrService.selectBytoken(token);
+		if (user == null) {
+			return renderError("用户登录已过期!");
+		}
+		try {
+			Map<String, Object> map  = new HashMap<String, Object>();
+			map.put("num",3);
+			List<Subject> subjects = subjectService.selectByRandom(map);
+			JSONArray arr = new JSONArray();
+			for(int i=0;i<subjects.size();i++){
+				JSONObject json = new JSONObject();
+				Subject subject = subjects.get(i);
+				int subjectsid =subject.getId();
+				json.put("id",subjectsid);
+				json.put("title",subject.getTitle());
+				json.put("level",subject.getLevel());
+				EntityWrapper<Answer> wrapper = new EntityWrapper<Answer>();
+				wrapper.eq("subject_id", subjectsid);
+				List<Answer> answers= answerService.selectList(wrapper);
+				json.put("answer",answers);
+				arr.add(json);
+			}
+			return renderSuccess(arr);
+
+		} catch (Exception e) {
+			e.printStackTrace();
+			//this.ErrorLog(e, 1, user.getId());
+			return renderError("系统异常");
+		}
+	}
+
+	/**
+	 * 收藏试题
+	 *
+	 * @param req
+	 * @param id
+	 * @param token
+	 * @return
+	 */
+	@RequestMapping("/addFavorite")
+	@ResponseBody
+	public Object addFavorite(HttpServletRequest req,Integer id, String token) {
+		User user = usrService.selectBytoken(token);
+		if (user == null) {
+			return renderError("用户登录已过期!");
+		}
+		try {
+			SubjectCollection sc = new SubjectCollection();
+			sc.setUserId(user.getId().intValue());
+			sc.setSubjectId(id);
+			boolean result = scService.insert(sc);
+			if(result){
+				return renderSuccess(sc);
+			}else{
+				return renderError("收藏失败");
+			}
+		} catch (Exception e) {
+			e.printStackTrace();
+			//this.ErrorLog(e, 1, user.getId());
+			return renderError("系统异常");
+		}
+	}
+
+	/**
+	 * 取消收藏试题
+	 *
+	 * @param req
+	 * @param id
+	 * @param token
+	 * @return
+	 */
+	@RequestMapping("/delFavorite")
+	@ResponseBody
+	public Object delFavorite(HttpServletRequest req,Integer id, String token) {
+		User user = usrService.selectBytoken(token);
+		if (user == null) {
+			return renderError("用户登录已过期!");
+		}
+		try {
+			Map<String, Object> map  = new HashMap<String, Object>();
+			map.put("userid", user.getId());
+			map.put("subject_id", id);
+			boolean result = scService.deleteByMap(map);
+			if(result){
+				return renderSuccess("删除成功");
+			}else{
+				return renderError("删除失败");
+			}
+		} catch (Exception e) {
+			e.printStackTrace();
+			//this.ErrorLog(e, 1, user.getId());
+			return renderError("系统异常");
+		}
+	}
+
+	/**
+	 * 获取收藏试题列表
+	 *
+	 * @param req
+	 * @param
+	 * @param token
+	 * @return
+	 */
+	@RequestMapping("/getFavoriteList")
+	@ResponseBody
+	public Object getFavoriteList(HttpServletRequest req, String token) {
+		User user = usrService.selectBytoken(token);
+		if (user == null) {
+			return renderError("用户登录已过期!");
+		}
+		try {
+			Map<String, Object> map  = new HashMap<String, Object>();
+			map.put("userid", user.getId());
+			List<SubjectCollection> subjectCollection =  scService.selectByMap(map);
+			//JSONObject locate = JSONObject.fromObject(subjectCollection);
+			JSONArray jsonArray = JSONArray.fromObject(subjectCollection);
+			return renderSuccess(jsonArray);
+
+		} catch (Exception e) {
+			e.printStackTrace();
+			//this.ErrorLog(e, 1, user.getId());
+			return renderError("系统异常");
+		}
+	}
+
+
+}

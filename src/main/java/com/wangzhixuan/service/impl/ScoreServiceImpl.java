@@ -1,0 +1,65 @@
+package com.wangzhixuan.service.impl;
+
+import java.util.List;
+import java.util.Map;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+
+import com.baomidou.mybatisplus.mapper.EntityWrapper;
+import com.baomidou.mybatisplus.plugins.Page;
+import com.baomidou.mybatisplus.service.impl.ServiceImpl;
+import com.wangzhixuan.commons.result.PageInfo;
+import com.wangzhixuan.mapper.ScoreMapper;
+import com.wangzhixuan.model.Score;
+import com.wangzhixuan.service.IScoreService;
+
+/**
+ * <p>
+ * 成绩报表 服务实现类
+ * </p>
+ *
+ * @author sunbq
+ * @since 2017-08-22
+ */
+@Service
+public class ScoreServiceImpl extends ServiceImpl<ScoreMapper, Score> implements IScoreService {
+
+	 @Autowired
+	   private ScoreMapper scoreMapper ;
+	@Override
+	public void selectDataGrid(PageInfo pageInfo) {
+		Page<Map<String, Object>> page = new Page<Map<String, Object>>(pageInfo.getNowpage(), pageInfo.getSize());
+        page.setOrderByField(pageInfo.getSort());
+        page.setAsc(pageInfo.getOrder().equalsIgnoreCase("asc"));
+        List<Map<String, Object>> list = scoreMapper.selectScorePage(page, pageInfo.getCondition());
+        
+        for (Map<String, Object> li : list) {
+        	 EntityWrapper<Score> ewnp = new EntityWrapper<Score>();
+             ewnp.lt("score", 60);
+             ewnp.eq("examination_id", li.get("id"));
+             int npass = scoreMapper.selectCount(ewnp);
+             
+             EntityWrapper<Score> ewp = new EntityWrapper<Score>();
+             ewp.ge("score", 60);
+             ewp.eq("examination_id", li.get("id"));
+             int pass = scoreMapper.selectCount(ewp);
+             
+             EntityWrapper<Score> enp = new EntityWrapper<Score>();
+             enp.eq("examination_id", li.get("id"));
+              int total =  scoreMapper.selectCount(enp);
+             li.put("total", total);
+             li.put("pass", pass);
+             li.put("npass", npass);
+          
+		}
+        
+       
+       
+        pageInfo.setRows(list);
+        pageInfo.setTotal(page.getTotal());
+		
+       
+	}
+	
+}

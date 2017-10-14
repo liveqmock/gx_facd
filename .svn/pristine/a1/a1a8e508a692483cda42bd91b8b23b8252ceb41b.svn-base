@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.wangzhixuan.mapper.ExaminationMapper">
+
+	<!-- 通用查询映射结果 -->
+	<resultMap id="BaseResultMap" type="com.wangzhixuan.model.Examination">
+		<id column="id" property="id" />
+		<result column="title" property="title" />
+        <result column="info" property="info" />
+		<result column="type" property="type" />
+		<result column="createUser" property="createUser" />
+		<result column="createTime" property="createTime" />
+		<result column="begin_time" property="beginTime" />
+		<result column="end_time" property="endTime" />
+
+
+	</resultMap>
+	
+<insert id="insertAndGetId" useGeneratedKeys="true" keyProperty="id" parameterType="com.wangzhixuan.model.Examination">  
+    insert into examination(title,createUser,createTime,type,begin_time,end_time)  
+    values(#{title},#{createUser},#{createTime},#{type},#{beginTime},#{endTime})  
+</insert> 
+
+ <select id="selectExaminationPage" resultType="Map">
+		      select 
+		       s.id AS id,s.title AS title,s.createTime AS createTime,s.type AS type,
+		      u.name AS name
+		      from examination s ,user u 
+		      where  s.createUser =u.id 
+            <if test=" createUser != null and createUser != '' ">
+               and u.name LIKE CONCAT('%', #{createUser}, '%')  
+            </if>
+            <if test=" recvDateStart != null ">
+                <![CDATA[ and s.createTime >= #{recvDateStart} ]]>
+            </if>
+            <if test=" recvDateEnd != null ">
+                <![CDATA[ and s.createTime <= #{recvDateEnd} ]]>
+            </if>
+            <if test=" type != null and type != '' ">
+                AND s.type =  #{type} 
+            </if>
+            <if test=" title != null and title != '' ">
+                AND s.title LIKE CONCAT('%', #{title}, '%')  
+            </if>
+    </select>
+
+	
+
+</mapper>

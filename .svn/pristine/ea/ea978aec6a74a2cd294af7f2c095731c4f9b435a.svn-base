@@ -1,0 +1,103 @@
+package com.wangzhixuan.controller.phone;
+
+import java.text.SimpleDateFormat;
+import java.util.List;
+import java.util.Map;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Controller;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.ResponseBody;
+
+import com.baomidou.mybatisplus.mapper.EntityWrapper;
+import com.wangzhixuan.commons.base.BaseController;
+import com.wangzhixuan.model.ItemRead;
+import com.wangzhixuan.model.User;
+import com.wangzhixuan.service.IItemReadService;
+import com.wangzhixuan.service.ITopicalInfoService;
+import com.wangzhixuan.service.IUserService;
+
+import net.sf.json.JSONArray;
+import net.sf.json.JSONObject;
+
+@Controller
+@RequestMapping("/phoneExtended")
+public class PhoneExtendedController extends BaseController{
+
+	@Autowired
+	private IUserService userService;
+	@Autowired
+	private IItemReadService itemReadService;
+	@Autowired
+	private ITopicalInfoService topicalInfoService;
+	
+	/**
+	 * 手机时事信息列表查询接口
+	 * @return
+	 */
+	@RequestMapping("getReleased")
+	@ResponseBody
+	public Object selectByStatus() {
+		JSONArray array=new JSONArray();
+		SimpleDateFormat sdf=new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+		JSONObject jo=null;
+		try {
+		List<Map<String, Object>> list=topicalInfoService.selectByStatus();
+		for(int i=0;i<list.size();i++) {
+			jo=new JSONObject();
+			jo.put("id", list.get(i).get("id"));
+			jo.put("title", list.get(i).get("title"));
+			jo.put("content", list.get(i).get("content"));
+			jo.put("createUser", list.get(i).get("createUser"));
+			jo.put("fileurl", list.get(i).get("fileurl"));
+			jo.put("createTime", sdf.format(list.get(i).get("createTime")));
+			array.add(jo);
+		}
+		return renderSuccess(array);
+		}catch(Exception e) {
+			e.printStackTrace();
+			return renderError("系统异常！");
+		}
+	}
+	/**
+	 * 手机获取时事信息详情页接口
+	 * @param id
+	 * @return
+	 */
+	@GetMapping("getDetail")
+	@ResponseBody
+	public Object selectById(long id) {
+		return renderSuccess(topicalInfoService.selectById(id));
+	}
+	
+	/**
+	 * 统计阅读数接口
+	 */
+	@RequestMapping("count")
+	@ResponseBody
+	public Object count(int userid, int item_id, int type, String token) {
+		User user = userService.selectBytoken(token);
+		try {
+			if(user==null) {
+				return renderError("用户登录已过期！");
+			}
+			EntityWrapper<ItemRead> ew = new EntityWrapper<ItemRead>();
+			ew.eq("userid", userid);
+			ew.eq("item_id", item_id);
+			ew.eq("type", type);
+			ItemRead itemRead = itemReadService.selectOne(ew);
+			if(itemRead==null) {
+				ItemRead ir=new ItemRead();
+				ir.setUserId(userid);
+				ir.setItemId(item_id);
+				ir.setType(type);
+				Boolean b = itemReadService.insert(ir);
+			}
+			return renderSuccess();
+		}catch(Exception e) {
+			e.printStackTrace();
+			return renderError("系统异常！");
+		}
+	}
+}

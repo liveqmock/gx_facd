@@ -1,0 +1,220 @@
+<%@ page language="java" contentType="text/html; charset=UTF-8" pageEncoding="UTF-8"%>
+<%@ include file="/commons/global.jsp" %>
+<script type="text/javascript">
+    var subjectDataGrid;
+    $(function() {
+        subjectDataGrid = $('#subjectDataGrid').datagrid({
+        url : '${path}/subject/dataGrid',
+        striped : true,
+        rownumbers : true,
+        pagination : true,
+        singleSelect : true,
+        idField : 'id',
+        sortName : 'id',
+        sortOrder : 'asc',
+        pageSize : 20,
+        pageList : [ 10, 20, 30, 40, 50, 100, 200, 300, 400, 500],
+        frozenColumns : [ [ {
+            width : '4%',
+            title : '编号',
+            field : 'id',
+            sortable : true
+        }, {
+            width : '25%',
+            title : '标题',
+            field : 'title',
+            sortable : true
+        }, {
+            width : '20%',
+            title : '解析',
+            field : 'analysis',
+            sortable : true
+        } ,{
+            width : '7%',
+            title : '难易程度',
+            field : 'level',
+            sortable : true,
+            formatter : function(value, row, index) {
+                switch (value) {
+                case 1:
+                    return '简单';
+                case 2:
+                    return '一般';
+                case 3:
+                    return '困难';
+                }
+            }
+        }, {
+            width : '6%',
+            title : '创建人',
+            field : 'name',
+            sortable : true
+        }
+        /*
+        , {
+            width : '13%',
+            title : '状态',
+            field : 'status',
+            sortable : true
+        }
+        */
+        , {
+            width : '140',
+            title : '创建时间',
+            field : 'createTime',
+            sortable : true
+        },
+        {
+            field : 'action',
+            title : '操作',
+            width : 200,
+            formatter : function(value, row, index) {
+                var str = '';
+                    str += $.formatString('<a href="javascript:void(0)" class="subject-easyui-linkbutton-edit" data-options="plain:true,iconCls:\'fi-pencil icon-blue\'" onclick="subjectEditFun(\'{0}\');" >编辑</a>', row.id);
+                    str += '&nbsp;&nbsp;|&nbsp;&nbsp;';
+                    str += $.formatString('<a href="javascript:void(0)" class="subject-easyui-linkbutton-del" data-options="plain:true,iconCls:\'fi-x icon-red\'" onclick="subjectDeleteFun(\'{0}\');" >删除</a>', row.id);
+                return str;
+            }
+        } ] ],
+        onLoadSuccess:function(data){
+            $('.subject-easyui-linkbutton-edit').linkbutton({text:'编辑'});
+            $('.subject-easyui-linkbutton-del').linkbutton({text:'删除'});
+        },
+        toolbar : '#subjectToolbar'
+    });
+});
+
+/**
+ * 添加框
+ * @param url
+ */
+function subjectAddFun() {
+    parent.$.modalDialog({
+        title : '添加',
+        width : 700,
+        height : 600,
+        href : '${path}/subject/addPage',
+        buttons : [ {
+            text : '确定',
+            handler : function() {
+                parent.$.modalDialog.openner_dataGrid = subjectDataGrid;//因为添加成功之后，需要刷新这个treeGrid，所以先预定义好
+                var f = parent.$.modalDialog.handler.find('#subjectAddForm');
+                f.submit();
+            }
+        } ]
+    });
+}
+
+
+/**
+ * 编辑
+ */
+function subjectEditFun(id) {
+    if (id == undefined) {
+        var rows = subjectDataGrid.datagrid('getSelections');
+        id = rows[0].id;
+    } else {
+        subjectDataGrid.datagrid('unselectAll').datagrid('uncheckAll');
+    }
+    parent.$.modalDialog({
+        title : '编辑',
+        width : 700,
+        height : 600,
+        href :  '${path}/subject/editPage?id=' + id,
+        buttons : [ {
+            text : '确定',
+            handler : function() {
+                parent.$.modalDialog.openner_dataGrid = subjectDataGrid;//因为添加成功之后，需要刷新这个dataGrid，所以先预定义好
+                var f = parent.$.modalDialog.handler.find('#subjectEditForm');
+                f.submit();
+            }
+        } ]
+    });
+}
+
+
+/**
+ * 删除
+ */
+ function subjectDeleteFun(id) {
+     if (id == undefined) {//点击右键菜单才会触发这个
+         var rows = subjectDataGrid.datagrid('getSelections');
+         id = rows[0].id;
+     } else {//点击操作里面的删除图标会触发这个
+         subjectDataGrid.datagrid('unselectAll').datagrid('uncheckAll');
+     }
+     parent.$.messager.confirm('询问', '您是否要删除当前信息？', function(b) {
+         if (b) {
+             progressLoad();
+             $.post('${path}/subject/delete', {
+                 id : id
+             }, function(result) {
+                 if (result.success) {
+                     parent.$.messager.alert('提示', result.msg, 'info');
+                     subjectDataGrid.datagrid('reload');
+                 }
+                 progressClose();
+             }, 'JSON');
+         }
+     });
+}
+
+
+/**
+ * 清除
+ */
+function subjectCleanFun() {
+    $('#subjectSearchForm input').val('');
+    $('#subjectSearchForm select').val('');
+    subjectDataGrid.datagrid('load', {});
+}
+/**
+ * 搜索
+ */
+function subjectSearchFun() {
+     subjectDataGrid.datagrid('load', $.serializeObject($('#subjectSearchForm')));
+}
+
+function exportsubject(){
+	window.location.href="${path}/subject/exportsubject?"+$("#subjectSearchForm").serialize();
+}
+</script>
+
+<div class="easyui-layout" data-options="fit:true,border:false">
+    <div data-options="region:'north',border:false" style="height: 30px; overflow: hidden;background-color: #fff">
+        <form id="subjectSearchForm">
+            <table>
+                <tr>
+                    <th>标题:</th>
+                    <td><input name="title" placeholder="搜索条件"/></td>
+                     <th>创建人:</th>
+                    <td><input name="createUser" placeholder="搜索条件"/></td>
+                    <th>难易程度:</th>
+                    <td><select name="level" >
+                    <option value="">请选择</option>
+                    <option value="1">简单</option>
+                    <option value="2">一般</option>
+                    <option value="3">困难</option></select>
+                   </td>
+                    <th>创建时间:</th>
+                    <td colspan="2">
+                        <input name="recvDateStart" id="recvDateStart" placeholder="点击选择时间" onclick="WdatePicker({readOnly:true,dateFmt:'yyyy-MM-dd HH:mm:ss'})" readonly="readonly" style="float: left;" />
+                        <span style="float: left;">至</span>
+                        <input  name="recvDateEnd" id = "recvDateEnd"  placeholder="点击选择时间" onclick="WdatePicker({readOnly:true,dateFmt:'yyyy-MM-dd HH:mm:ss'})" readonly="readonly" style="float: left;" />
+                    </td>
+                    <td>
+                        <a href="javascript:void(0);" class="easyui-linkbutton" data-options="iconCls:'fi-magnifying-glass',plain:true" onclick="subjectSearchFun();">查询</a>
+                        <a href="javascript:void(0);" class="easyui-linkbutton" data-options="iconCls:'fi-x-circle',plain:true" onclick="subjectCleanFun();">清空</a>
+                    </td>
+                </tr>
+            </table>
+        </form>
+     </div>
+ 
+    <div data-options="region:'center',border:false">
+        <table id="subjectDataGrid" data-options="fit:true,border:false"></table>
+    </div>
+</div>
+<div id="subjectToolbar" style="display: none;">
+        <a onclick="subjectAddFun();" href="javascript:void(0);" class="easyui-linkbutton" data-options="plain:true,iconCls:'fi-page-add'">添加</a>
+</div>

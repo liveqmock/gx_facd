@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.wangzhixuan.mapper.AnswerMapper">
+
+	<!-- 通用查询映射结果 -->
+	<resultMap id="BaseResultMap" type="com.wangzhixuan.model.Answer">
+		<id column="id" property="id" />
+		<result column="subject_id" property="subjectId" />
+		<result column="answerContent" property="answerContent" />
+		<result column="analysis" property="analysis" />
+		<result column="isAnswer" property="isAnswer" />
+		<result column="seq" property="seq" />
+		<result column="createTime" property="createTime" />
+	</resultMap>
+
+<select id="selectAnswer" resultType="com.wangzhixuan.model.Answer" >
+   select a.id, a.answerContent,a.analysis,
+    a.isAnswer,a.seq,a.createTime
+    from subject s ,answer a where  a.subject_id  =s.id and a.subject_id =  ${id}
+ </select>
+ 
+   <delete id="delectAnswer">
+        DELETE from answer  where subject_id = ${id}
+   </delete>
+</mapper>

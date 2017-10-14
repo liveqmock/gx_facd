@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.wangzhixuan.mapper.BorderKnowledgeMapper">
+
+	<!-- 通用查询映射结果 -->
+	<resultMap id="BaseResultMap" type="com.wangzhixuan.model.BorderKnowledge">
+		<id column="id" property="id" />
+		<result column="title" property="title" />
+		<result column="content" property="content" />
+		<result column="createUser" property="createUser" />
+		<result column="createTime" property="createTime" />
+		<result column="typeId" property="typeId" />
+		<result column="status" property="status" />
+	</resultMap>
+
+
+ <select id="selectBorderKnowledgePage" resultType="Map">
+        SELECT 
+         b.id,b.content AS content,b.title AS title,b.status AS status,b.createTime AS createTime,
+         u.name AS name,k.name AS kname
+        from border_knowledge b,knowledge_type k ,user u 
+        where b.createUser = u.id 
+        and b.typeId = k.id and b.status !=0 and k.status !=0
+	       
+            <if test=" createUser != null and createUser != '' ">
+               and u.name LIKE CONCAT('%', #{createUser}, '%')  
+            </if>
+            <if test=" bname != null and bname  != '' ">
+                AND k.name  LIKE CONCAT('%', #{bname}, '%')    
+            </if>
+            <if test=" recvDateStart != null ">
+                <![CDATA[ and t.receive_time >= #{recvDateStart} ]]>
+            </if>
+            <if test=" recvDateEnd != null ">
+                <![CDATA[ and t.receive_time <= #{recvDateEnd} ]]>
+            </if>
+            <if test=" content != null and content != '' ">
+                AND b.content LIKE CONCAT('%', #{content}, '%')  
+            </if>
+            <if test=" title != null and title != '' ">
+                AND b.title LIKE CONCAT('%', #{title}, '%')  
+            </if>
+    </select>
+</mapper>

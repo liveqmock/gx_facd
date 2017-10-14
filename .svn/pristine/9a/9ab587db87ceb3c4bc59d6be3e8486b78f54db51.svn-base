@@ -1,0 +1,125 @@
+<%@ page language="java" contentType="text/html; charset=UTF-8"
+	pageEncoding="UTF-8"%>
+<%@ include file="/commons/global.jsp"%>
+<script type="text/javascript">
+	$(function() {
+		$('#positionMarkEditForm').form({
+			url : '${path}/positionMark/change',
+			onSubmit : function() {
+				progressLoad();
+				var isValid = $(this).form('validate');
+				if (!isValid) {
+					progressClose();
+				}
+				return isValid;
+			},
+			success : function(result) {
+				progressClose();
+				result = $.parseJSON(result);
+				if (result.success) {
+					parent.$.modalDialog.openner_dataGrid.datagrid('reload');//之所以能在这里调用到parent.$.modalDialog.openner_dataGrid这个对象，是因为user.jsp页面预定义好了
+					parent.$.modalDialog.handler.dialog('close');
+				} else {
+					var form = $('#positionMarkEditForm');
+					parent.$.messager.alert('错误', result.msg, 'error');
+				}
+			}
+		});
+
+		$("#editStatus").val('${positionMark.infoStatus}');
+
+	});
+	function replacecoordinate(id){
+		parent.$.messager.confirm('询问', '您是否要替换原有坐标？', function(b) {
+	         if (b) {
+	             progressLoad();
+	             $.post('${path}/positionMark/replacemm', {
+	                 id : id
+	             }, function(result) {
+	                 if (result.success) {
+	                     parent.$.messager.alert('提示', result.msg, 'info');
+	                     positionMarkDataGrid.datagrid('reload');
+	                 }
+	                 progressClose();
+	             }, 'JSON');
+	         }
+	     });
+	}
+</script>
+<div class="easyui-layout" data-options="fit:true,border:false">
+	<div data-options="region:'center',border:false" title=""
+		style="overflow: hidden; padding: 3px;">
+		<form id="positionMarkEditForm" method="post">
+			<input name="id" type="hidden" value="${positionMark.id}" />
+			<table class="grid">
+				<tr>
+					<td width="20%;">信息名称</td>
+					<td width="30%;">${positionMark.name}</td>
+					<td width="20%;">信息类型</td>
+					<td width="30%;"><label> <c:if
+								test="${positionMark.type==0}">界碑</c:if> <c:if
+								test="${positionMark.type==1}">巡防路</c:if> <c:if
+								test="${positionMark.type==2}">邻国边境部署<</c:if>
+					</label></td>
+				</tr>
+				<tr>
+					<td>标记人</td>
+					<td><p>${username}</p></td>
+					<td>报送信息时间</td>
+					<td><fmt:formatDate pattern="yyyy-MM-dd HH:mm:ss"
+							value="${positionMark.createTime}" /></td>
+				</tr>
+				<tr>
+					<td>新经纬度</td>
+					<td>${positionMark.longitude}</td>
+					<td>${positionMark.latitude}</td>
+					<td><input type="button" value="替换" onclick="replacecoordinate(${positionMark.id})" /> </td>
+				</tr>
+				<c:if test="${positionMark.type==0 }">
+				<tr>
+					<td>区域归属</td>
+					<td>${road.territorial}</td>
+					<td>路段名称</td>
+					<td>${road.name}</td>
+				</tr>
+				<tr>
+					<td>${mapMark.name}经纬度</td>
+					<td>${mapMark.longitude}</td>
+					<td>${mapMark.latitude}</td>
+					<td>*界碑经纬度信息</td>
+				</tr>
+				</c:if>
+				<tr>
+					<td>信息描述</td>
+					<td colspan="3">
+						<p>${positionMark.info}</p>
+					</td>
+				</tr>
+				<tr>
+					<td>附件列表</td>
+					<td colspan="3">
+						<ul>
+							<li>
+							<c:forEach items="${SendFile}" var="file">
+								<a href="${file.fileurl}" target="_blank" >${file.filename}</a>
+							</c:forEach>
+							</li>
+						</ul>
+					</td>
+				</tr>
+				<tr>
+					<td>备注</td>
+					<td colspan="2"><textarea rows="2" cols="30" name="remark"></textarea>
+					</td>
+					<td><select id="infoStatus" name="infoStatus"
+						class="easyui-combobox"
+						data-options="width:140,height:29,editable:false,panelHeight:'auto'">
+							<option value="1">请选择</option>
+							<option value="2">审核通过</option>
+							<option value="3">审核未通过</option>
+					</select></td>
+				</tr>
+			</table>
+		</form>
+	</div>
+</div>

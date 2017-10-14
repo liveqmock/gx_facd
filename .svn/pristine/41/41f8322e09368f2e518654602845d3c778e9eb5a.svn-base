@@ -1,0 +1,269 @@
+<%@ page language="java" contentType="text/html; charset=UTF-8" pageEncoding="UTF-8"%>
+<%@ taglib uri="http://java.sun.com/jsp/jstl/fmt"  prefix="f"%>
+<%@ include file="/commons/global.jsp" %>
+<script type="text/javascript">
+var ids ="0,";
+var j = 0;
+    $(function() {
+        $('#examinationEditForm').form({
+            url : '${path}/examination/edit',
+            onSubmit : function() {
+                progressLoad();
+                var isValid = $(this).form('validate');
+                if (!isValid) {
+                    progressClose();
+                }
+                return isValid;
+            },
+            success : function(result) {
+                progressClose();
+                result = $.parseJSON(result);
+                if (result.success) {
+                    parent.$.modalDialog.openner_dataGrid.datagrid('reload');//之所以能在这里调用到parent.$.modalDialog.openner_dataGrid这个对象，是因为user.jsp页面预定义好了
+                    parent.$.modalDialog.handler.dialog('close');
+                } else {
+                    var form = $('#examinationEditForm');
+                    parent.$.messager.alert('错误',result.msg, 'error');
+                }
+            }
+        });
+        
+    });
+    
+    function next(){
+    	
+    		 $("#tab").hide();
+    		 $("#tab4").css('display','block');
+    		 nextOne();
+        
+    }
+    
+    function nextOne(){
+    	   var id= $("#examinationid").val();
+    	 $.ajax({
+				url:"${path}/examination/selectEdit?id="+id,
+				type:"post",
+				dataType:"json",
+				success:function(result){
+				           var arr = result.obj;
+				           console.log(arr);
+				        for(var i=0;i<arr.length;i++){
+				        	 var $t= $("#tab4 tr:last");
+				        	$t.after("<tr id='firstid"+i+"'></tr>");
+				        	 var $tt= $("#firstid"+i);
+				        	var v = arr[i];
+							 $tt.append("<td><input  type='checkbox' name='ids' value='"+v.id+"'/></td><td>"+v.title+"</td><td>"+v.level+"</td>");
+							 var g = v.answer;
+							 var $tq= $("#tab4 tr:last");
+							 $tq.after("<tr id='trid"+i+"'></tr>");
+							var $tp= $("#trid"+i+"");
+							console.log(v.answer);
+							 // var $tp= $("#tab5 tr:last");
+							 for(var j=0;j<g.length;j++){
+								   var h = g[j];
+								 $tp.append("<td>"+h.answerContent+"<input type='hidden' name='id' value='"+h.id+"'/></td>");
+								// $tp.after("<tr></tr>");
+							 } 
+				        }
+				}
+			});
+    }
+    
+    function delectTestpaper(){
+    	var array = document.getElementsByName("ids");
+		if(array==null||array==""){
+			alert("您还没有选择题目！");
+			return;
+		}else if(array.length<1){
+			alert("请至少选择1道以上的题目！");
+		}
+		for(var i=0;i<array.length;i+=1){
+				ids+= array[i].value+",";
+		}
+		ids = ids.substring(0, ids.length-1);
+		
+		 $.ajax({
+				url:"${path}/examination/deleteMore?ids="+ids,
+				type:"post",
+				success:function(result){
+					   progressClose();
+		                result = $.parseJSON(result);
+		                if (result.success) {
+		                	$("#tab4").html("<tr><tr/>");
+		                	 nextOne();
+		                    parent.$.messager.alert('成功', result.msg, 'check');
+		                } else {
+		                    var form = $('#examinationAddForm');
+		                    parent.$.messager.alert('错误', result.msg, 'error');
+		                }
+				}
+			});
+    }
+    
+    function addTestpaper(){
+    	 $("#tab4").hide();
+		 $("#tab5").css('display','block');
+		 nextfive(1);
+    }
+    
+    function nextfive(page){
+      	 if(page=1){
+      		 j=j-1;
+      	 }else if(page==2){
+      		 j=j+1;
+      	 }else if(page==3){
+      		 j=1;
+      	 }else if(page=0){
+       		 j=1;
+       	 }else{
+      		 j=max;
+      	 }
+      	 
+      	$("#tab6").html("<tr id='firstid'><tr/>"); 
+      
+   	var arr = document.getElementsByName("ids");
+   	
+   	
+   	for(var i=0;i<arr.length;i+=1){
+   		if(arr[i].checked){
+   			ids+= arr[i].value+",";
+   		}
+   	}
+   	ids = ids.substring(0, ids.length-1);
+   		 $.ajax({
+   				url:"${path}/examination/selectPage?page="+j+"&ids="+ids,
+   				type:"post",
+   				dataType:"json",
+   				success:function(result){
+   				           var arr = result.obj;
+   				           console.log(arr);
+   				        for(var i=0;i<arr.length;i++){
+   				        	 var $t= $("#tab5 tr:last");
+   				        	$t.after("<tr id='firstid"+i+"'></tr>");
+   				        	 var $tt= $("#firstid"+i);
+   				        	var v = arr[i];
+   							 $tt.append("<td><input  type='checkbox' name='ids' value='"+v.id+"'/></td><td>"+v.title+"</td><td>"+v.level+"</td>");
+   							 var g = v.answer;
+   							 var $tq= $("#tab5 tr:last");
+   							 $tq.after("<tr id='trid"+i+"'></tr>");
+   							var $tp= $("#trid"+i+"");
+   							console.log(v.answer);
+   							 // var $tp= $("#tab5 tr:last");
+   							 for(var j=0;j<g.length;j++){
+   								   var h = g[j];
+   								 $tp.append("<td>"+h.answerContent+"<input type='hidden' name='id' value='"+h.id+"'/></td>");
+   								// $tp.after("<tr></tr>");
+   							 } 
+   				        }
+   				}
+   			});
+   	 
+       }
+    
+ function nextfinish(){
+	 var id= $("#examinationid").val();
+		var array = document.getElementsByName("ids");
+		if(array==null||array==""){
+			alert("您还没有选择题目！");
+			return;
+		}else if(array.length<1){
+			alert("请至少选择1道以上的题目！");
+		}
+		for(var i=0;i<array.length;i+=1){
+				ids+= array[i].value+",";
+		}
+		ids = ids.substring(0, ids.length-1);
+		
+		 $.ajax({
+				url:"${path}/examination/addTestpaper?ids="+ids+"&id"+id,
+				type:"post",
+				success:function(result){
+					 $("#tab5").hide();
+	   				 $("#tab4").css('display','block');
+	   				$("#tab4").html("<tr><tr/>");
+	   				 nextOne();
+				}
+			});
+		 }
+</script>
+<div class="easyui-layout" data-options="fit:true,border:false">
+    <div data-options="region:'center',border:false" title="" style="overflow: hidden;padding: 3px;">
+        <form id="examinationEditForm" method="post" enctype="multipart/form-data">
+      <input type="hidden" value="${examination.id }" id="examinationid"/>
+         <div id="tab" >
+            <table class="grid" >
+            
+                <tr >
+                   <td >  标题：</td>
+                    <td ><input id="title" name="title" type="text" placeholder="请输入标题" class="easyui-validatebox span2" data-options="required:true" value="${examination.title }"></td>
+                 <td>类型</td>
+                  
+                    <td><select id="type" name="type" class="easyui-combobox"
+                                data-options="width:140,height:29,editable:false,panelHeight:'auto'">
+                                <c:if test="${examination.type==0 }"> 
+                                <option value="0">请选择</option>
+                                <option value="1">随机选题</option>
+                                <option value="2">手动选题</option>
+                                </c:if>
+                                
+	                    <c:if test="${examination.type==1 }"> 
+	                    <option value="1">随机选题</option>
+	                    <option value="0">请选择</option>
+	                    <option value="2">手动选题</option>
+	                    </c:if>
+	                    <c:if test="${examination.type==2 }">
+	                    <option value="2">手动选题</option>
+	                    <option value="0">请选择</option>
+	                      <option value="1">随机选题</option>
+	                    </c:if>
+                       </select>
+                    </td>
+                </tr> 
+                 <tr>
+                  <td>考试开始日期</td>
+					<td>
+					
+                        <input id="beginTime" value="<fmt:formatDate value="${examination.beginTime }" pattern="yyyy-MM-dd HH:mm:ss"/>" onclick="WdatePicker({readOnly:true,dateFmt:'yyyy-MM-dd HH:mm:ss'})"  name="beginTime" placeholder="点击选择时间" type="text" class="easyui-validatebox span2" data-options="required:true" id="datetime" />
+                        </td>
+               
+                    <td>考试截止日期</td>
+					<td>
+                        <input id="endTime" value="<fmt:formatDate value="${examination.endTime }" pattern="yyyy-MM-dd HH:mm:ss"/>" onclick="WdatePicker({readOnly:true,dateFmt:'yyyy-MM-dd HH:mm:ss'})" name="endTime" placeholder="点击选择时间" type="text" class="easyui-validatebox span2" data-options="required:true" id="datetime" />
+                        </td>
+                 </tr>
+            </table  >
+            <br/>
+            <br/>
+            
+                           <center> <input type="button" onclick="next()" value="修改试卷内容"></center>
+                        </div>  
+          
+         
+             <div id="tab4"  style="display: none;" align="center">
+                 <table id="tab2" width="100%" border="0" cellspacing="0" cellpadding="0">
+                      <tr>
+                      </tr>
+                 </table>
+                  <br/>
+                <br/>
+                <center><input type="button" onclick="delectTestpaper()" value="删除"><input type="button" onclick="addTestpaper()" value="添加"> </center>
+             </div>
+           
+            <div id="tab5"  style="display: none;" align="center">
+                 <table id="tab6" width="100%" border="0" cellspacing="0" cellpadding="0">
+                      <tr id="firstid">
+                      
+                        
+                      </tr>
+                      
+                 </table>
+                 <br/><br/> 
+                <a href='javascript:void(0);' onclick="nextfive(3)">首页</a>
+                 <a href='javascript:void(0);' onclick="nextfive(1)">上一页</a>
+                 <a href='javascript:void(0);' onclick='nextfive(2)'>下一页</a> 
+                 <a href='javascript:void(0);' onclick="nextfive(4)">尾页</a>
+                 <input type='button' onclick='nextfinish()' value='完成'></center>
+             </div>
+        </form>
+    </div>
+</div>

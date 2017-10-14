@@ -1,0 +1,16 @@
+package com.wangzhixuan.mapper;
+
+import com.wangzhixuan.model.Score;
+import com.baomidou.mybatisplus.mapper.BaseMapper;
+
+/**
+ * <p>
+  * 成绩报表 Mapper 接口
+ * </p>
+ *
+ * @author sunbq
+ * @since 2017-08-22
+ */
+public interface ScoreMapper extends BaseMapper<Score> {
+
+}

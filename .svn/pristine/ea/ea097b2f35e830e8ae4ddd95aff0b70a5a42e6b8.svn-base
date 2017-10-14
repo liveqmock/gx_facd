@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.wangzhixuan.mapper.SendFileMapper">
+
+	<!-- 通用查询映射结果 -->
+	<resultMap id="BaseResultMap" type="com.wangzhixuan.model.SendFile">
+		<id column="id" property="id" />
+		<result column="owenid" property="owenid" />
+		<result column="msgid" property="msgid" />
+		<result column="filename" property="filename" />
+		<result column="filesuffix" property="filesuffix" />
+		<result column="fileurl" property="fileurl" />
+		<result column="filetype" property="filetype" />
+		<result column="description" property="description" />
+		<result column="filesource" property="filesource" />
+	</resultMap>
+
+</mapper>

@@ -1,0 +1,125 @@
+<%@ page language="java" contentType="text/html; charset=UTF-8" pageEncoding="UTF-8"%>
+<%@ include file="/commons/global.jsp" %>
+<script type="text/javascript">
+   var i = 3;
+    $(function() {
+        $('#examinationAddForm').form({
+            url : '${path}/examination/add',
+            onSubmit : function() {
+                progressLoad();
+                var isValid = $(this).form('validate');
+                if (!isValid) {
+                    progressClose();
+                }
+                return isValid;
+            },
+            success : function(result) {
+                progressClose();
+                result = $.parseJSON(result);
+                if (result.success) {
+                    //之所以能在这里调用到parent.$.modalDialog.openner_dataGrid这个对象，是因为user.jsp页面预定义好了
+                    parent.$.modalDialog.openner_dataGrid.datagrid('reload');
+                    parent.$.modalDialog.handler.dialog('close');
+                } else {
+                    var form = $('#examinationAddForm');
+                    parent.$.messager.alert('错误', result.msg, 'error');
+                }
+            }
+        });
+    });
+    
+    function nextOne(){
+        $("#tab").hide();
+        $("#tab2").css('display','block');
+    }
+</script>
+<div class="easyui-layout" data-options="fit:true,border:false" >
+    <div data-options="region:'center',border:false" style="overflow-y:scroll; overflow-x:scroll;padding: 3px;" >
+        <form id="examinationAddForm" method="post" enctype="multipart/form-data">
+            <table class="grid" id="tab" >
+                <tr >
+                   <td >  标题：</td>
+                    <td ><input name="title" type="text" placeholder="请输入标题" class="easyui-validatebox span2" data-options="required:true" value=""></td>
+               
+                </tr> 
+                 <tr>
+                  <td>考试开始日期</td>
+					<td>
+                        <input onclick="WdatePicker({readOnly:true,dateFmt:'yyyy-MM-dd'})" name="begin_time" placeholder="点击选择时间" type="text" class="easyui-validatebox span2" data-options="required:true" id="datetime" />
+                        </td>
+                 </tr>
+                 <tr>
+                    <td>考试截止日期</td>
+					<td>
+                        <input onclick="WdatePicker({readOnly:true,dateFmt:'yyyy-MM-dd'})" name="end_time" placeholder="点击选择时间" type="text" class="easyui-validatebox span2" data-options="required:true" id="datetime" />
+                        </td>
+                 </tr>
+            </table  >
+            <br/>
+            <br/>
+                           <center> <input type="button" onclick="nextOne()" value="下一步"></center>
+                          
+            <div id="tab2"  style="display: none;">
+               <table >
+                   <tr>
+                      <td>类型</td>
+                    <td><select name="type" class="easyui-combobox"
+                                data-options="width:140,height:29,editable:false,panelHeight:'auto'">
+	                     <option value="0">请选择</option>
+	                     <option value="1">随机选题</option>
+                         <option value="2">手动选题</option>
+                       </select>
+                    </td>
+                   </tr>
+               </table>
+                <br/>
+                <br/>
+                <center> <input type="button" onclick="nextTow()" value="下一步"></center>
+            </div>
+            <div id="tab3"  style="display: none;">
+             <table>
+                 <tr>
+                    <td>
+                                                                              请输入随机选题的数量
+                    </td>
+                    <td>
+                        <input type="text" class="easyui-numberbox" name="num"/>
+                    </td>
+                 </tr>
+             </table>
+             <br/>
+                <br/>
+                <center> <input type="button" onclick="nextThree()" value="下一步"></center>
+            </div>
+             <div id="tab3"  style="display: none;">
+                 <table>
+                      <tr>
+                         <th>标题</th>
+                         <th>难度</th>
+                          <th>创建人</th>
+                         <th>创建时间</th>
+                      </tr>
+                 </table>
+                  <br/>
+                <br/>
+                <center> <input type="button" onclick="nextfou()" value="完成"></center>
+                <center> <input type="button" onclick="nextfou()" value="重新生成"></center>
+             </div>
+             <div id="tab4"  style="display: none;">
+                 <table>
+                      <tr>
+                         <th>标题</th>
+                         <th>难度</th>
+                          <th>创建人</th>
+                         <th>创建时间</th>
+                      </tr>
+                 </table>
+                  <br/>
+                <br/>
+                <center> <input type="button" onclick="nextfai()" value="下一步"></center>
+             </div>
+        </form>
+        
+        
+    </div>
+</div>
